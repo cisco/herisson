@@ -15,3 +15,6 @@ Herrison is distributed into many modules. The core of which is a native C++ lib
 A developer can create their own modules by linking to the Herrison library, thereby creating their own pipeline components such as: Color Filters, Video Compositing, and assorted video converters. The library exposes a simple frame buffer approach. As such both the real time networking and media format conversion aspects are handled internally by the system. This empowers the developer to concentrate purely on video processing without having to worry about communicating with the other stages of the pipeline.
 
 Herrison modules can be run inside Docker containers to support modern data-center virtualization paradigms. Or they can be run on bare metal GPU wielding Windows machines to allow backwards compatibility with the current setup of the current paradigms of SDI based video pipelines.
+
+## Additional Reading:
+[Getting Started](ip2vf/README.md) - Will teach you how to build and run a sample pipeline.
