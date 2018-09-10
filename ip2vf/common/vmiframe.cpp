@@ -52,13 +52,29 @@ void CvMIFrame::_reset() {
     _media_size = 0;
 }
 
+CvMIFrame & CvMIFrame::operator=(const CvMIFrame &other) {
+
+    this->_ref_counter = 0;
+    this->_frame_size = other._frame_size;
+    this->_media_size = other._media_size;
+    this->_init_buffer(this->_frame_size);
+    memcpy(this->_frame_buffer, other._frame_buffer, other._frame_size);
+    int result = this->_fh.ReadHeaders(this->_frame_buffer);
+    if (result != VMI_E_OK) {
+        LOG_ERROR("Incorrect header format... do we have corrupted data?");
+    }
+    return *this;
+}
+
 int CvMIFrame::addRef() {
+
     std::unique_lock<std::mutex> lock(_mtx);
     _ref_counter++;
     return _ref_counter;
 }
 
 int CvMIFrame::releaseRef() {
+
     std::unique_lock<std::mutex> lock(_mtx);
     _ref_counter--;
     return _ref_counter;
@@ -105,51 +121,76 @@ void CvMIFrame::memset(int val) {
     }
 }
 
-int CvMIFrame::createVideoFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId) {
+
+/**
+* \brief Create a vMI frame of type video from an smpte frame object
+* vMIFrame is released.
+*
+* \param hFrame handle to the vMIFrame
+* \return the current ref counter for the vMIFrame, -1 if not found
+*/
+int CvMIFrame::createFrameFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId) {
 
     if (smpteframe == NULL)
         return VMI_E_INVALID_PARAMETER;
 
-    int frameNumber = smpteframe->getFrameNumber();
-    int media_size = smpteframe->getFrameWidth() * smpteframe->getFrameHeight() * 2 /*nb components per pixel*/ * smpteframe->getFrameDepth() / 8;
+    MEDIAFORMAT kindOfBuffer = smpteframe->getMediaBufferType(srcBuffer);
+
+    // Retreive media size
+    int media_size = -1;
+    switch (kindOfBuffer) {
+    case MEDIAFORMAT::VIDEO:
+        media_size = smpteframe->getFrameWidth() * smpteframe->getFrameHeight() * 2 /*nb components per pixel*/ * smpteframe->getFrameDepth() / 8; 
+        break;
+    case MEDIAFORMAT::AUDIO:
+        media_size = smpteframe->getFrameSize(); 
+        break;
+    case MEDIAFORMAT::ANC:
+        // TODO
+        break;
+    default:
+        // ERROR
+        break;
+    }
+
     int frame_size = media_size + CFrameHeaders::GetHeadersLength();
     _init_buffer(frame_size);
-    _fh.InitVideoHeadersFromProfile(smpteframe->getProfile());
+
+    // Set correctly headers
+    switch (kindOfBuffer) {
+    case MEDIAFORMAT::VIDEO:
+        _fh.InitVideoHeadersFromProfile(smpteframe->getProfile()); 
+        break;
+    case MEDIAFORMAT::AUDIO:
+        _fh.InitAudioHeadersFromSMPTE(AUDIOFMT::L24_PCM, SAMPLERATE::S_48KHz); 
+        break;
+    case MEDIAFORMAT::ANC:
+        // TODO
+        break;
+    default:
+        // ERROR
+        break;
+    }
     _media_size = smpteframe->extractMediaContent(srcBuffer, (char*)_media_buffer, media_size);
     _fh.SetMediaTimestamp(smpteframe->getTimestamp());
     _fh.SetMediaSize(_media_size);
-    _fh.SetFrameNumber(frameNumber);
+    _fh.SetFrameNumber(smpteframe->getFrameNumber());
     _fh.SetModuleId(moduleId);
     _fh.WriteHeaders(_frame_buffer);
 
     return VMI_E_OK;
 }
 
-int CvMIFrame::createAudioFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId) {
-    if (smpteframe == NULL)
-        return VMI_E_INVALID_PARAMETER;
-
-    int frameNumber = smpteframe->getFrameNumber();
-    int media_size = smpteframe->getFrameSize();
-    int frame_size = media_size + CFrameHeaders::GetHeadersLength();
-    _init_buffer(frame_size);
-    _fh.InitAudioHeadersFromSMPTE(AUDIOFMT::L24_PCM, SAMPLERATE::S_48KHz);
-    _media_size = smpteframe->extractMediaContent(srcBuffer, (char*)_media_buffer, media_size);
-    _fh.SetMediaTimestamp(smpteframe->getTimestamp());
-    _fh.SetMediaSize(_media_size);
-    _fh.SetFrameNumber(frameNumber);
-    _fh.SetModuleId(moduleId);
-    _fh.WriteHeaders(_frame_buffer);
-
-    return VMI_E_OK;
-}
-
-int CvMIFrame::createFromMem(unsigned char* buffer, int buffer_size, int moduleId) {
+int CvMIFrame::createFrameFromMem(unsigned char* buffer, int buffer_size, int moduleId) {
 
     if (buffer == NULL)
         return VMI_E_INVALID_PARAMETER;
 
-    _fh.ReadHeaders(buffer);
+    int result = _fh.ReadHeaders(buffer);
+    if (result != VMI_E_OK) {
+        LOG_ERROR("Incorrect header format... do we have corrupted data?");
+        return VMI_E_INVALID_FRAME;
+    }
     int media_size = _fh.GetMediaSize();
     int frame_size = media_size + CFrameHeaders::GetHeadersLength();
     if (frame_size > buffer_size) {
@@ -165,7 +206,7 @@ int CvMIFrame::createFromMem(unsigned char* buffer, int buffer_size, int moduleI
     return VMI_E_OK;
 }
 
-int CvMIFrame::createUninitialized(int size) {
+int CvMIFrame::createFrameUninitialized(int size) {
 
     int frame_size = size;
     int media_size = frame_size - CFrameHeaders::GetHeadersLength();
@@ -175,7 +216,17 @@ int CvMIFrame::createUninitialized(int size) {
     return VMI_E_OK;
 }
 
-int CvMIFrame::createFromTCP(TCP* sock, int moduleId) {
+int CvMIFrame::createFrameFromMediaSize(int size) {
+
+    int media_size = size;
+    int frame_size = media_size + CFrameHeaders::GetHeadersLength();
+    _init_buffer(frame_size);
+    _fh.SetMediaSize(_media_size);
+
+    return VMI_E_OK;
+}
+
+int CvMIFrame::createFrameFromTCP(TCP* sock, int moduleId) {
 
     int result;
 
@@ -196,8 +247,10 @@ int CvMIFrame::createFromTCP(TCP* sock, int moduleId) {
     if (result != VMI_E_OK)
         return VMI_E_FAILED_TO_RCV_SOCKET;
     result = _fh.ReadHeaders(_frame_buffer);
-    if (result != VMI_E_OK)
-        return result;
+    if (result != VMI_E_OK) {
+        LOG_ERROR("Incorrect header format... do we have corrupted data?");
+        return VMI_E_INVALID_FRAME;
+    }
     _fh.SetModuleId(moduleId);
     _fh.WriteHeaders(_frame_buffer);
     //_fh.DumpHeaders();
@@ -213,9 +266,12 @@ int CvMIFrame::createFromTCP(TCP* sock, int moduleId) {
     return VMI_E_OK;
 }
 
-int CvMIFrame::createFromUDP(UDP* sock, int moduleId) {
+int CvMIFrame::createFrameFromUDP(UDP* sock, int moduleId) {
 
-    // Some verifications
+    /*
+     * Some validation...
+     */
+    
     if (sock == NULL)
         return VMI_E_INVALID_PARAMETER;
 
@@ -226,7 +282,9 @@ int CvMIFrame::createFromUDP(UDP* sock, int moduleId) {
         return VMI_E_MEM_FAILED_TO_ALLOC;
     }
 
-    // Keep the first packet. it must contain vMI headers.
+    /*
+     * Keep the first packet. it must contain vMI headers.
+     */
     int len, result;
     len = RTP_MAX_FRAME_LENGTH;
     char packet[RTP_MAX_FRAME_LENGTH];
@@ -244,8 +302,10 @@ int CvMIFrame::createFromUDP(UDP* sock, int moduleId) {
     memcpy((char*)_frame_buffer, packet + RTP_HEADERS_LENGTH, payloadLen);
     // then read headers
     result = _fh.ReadHeaders(_frame_buffer);
-    if (result != VMI_E_OK)
+    if (result != VMI_E_OK) {
+        LOG_INFO("Error on reading vMI headers from first packet!!! Do we lost packet?");
         return VMI_E_INVALID_FRAME;
+    }
     _fh.SetModuleId(moduleId);
     _fh.WriteHeaders(_frame_buffer);
 
@@ -260,11 +320,15 @@ int CvMIFrame::createFromUDP(UDP* sock, int moduleId) {
     if (result != VMI_E_OK)
         return VMI_E_INVALID_FRAME;
 
-    // Now, keep the remaining data...
+    /*
+     * Now, keep the remaining data...
+     */
     //int offset = _headers.GetHeadersLength();
     char* p = (char*)_frame_buffer + payloadLen;
     int remainingLen = _frame_size - payloadLen;
     bool bEndOfFrame = false;
+
+    sock->pktTSctl(1, _fh.GetMediaTimestamp());                 /* PktTS hook */
     while ( !bEndOfFrame ) {
 
         // First, keep the full RTP frame from the current UDP packet
@@ -305,17 +369,29 @@ int CvMIFrame::createFromUDP(UDP* sock, int moduleId) {
             return VMI_E_INVALID_FRAME;
         }
     }
+    sock->pktTSctl(0, _fh.GetMediaTimestamp());                 /* PktTS hook */
 
     return VMI_E_OK;
 }
 
-int CvMIFrame::create(CFrameHeaders* fh) {
+int CvMIFrame::createFrameFromHeaders(CFrameHeaders* fh) {
 
     _fh = *fh;
     int media_size = _fh.GetMediaSize();
     int frame_size = media_size + CFrameHeaders::GetHeadersLength();
     _init_buffer(frame_size);
     LOG("resize to %d", media_size);
+    _fh.SetMediaSize(_media_size);
+    _fh.WriteHeaders(_frame_buffer);
+    return VMI_E_OK;
+}
+
+int CvMIFrame::setMediaContent(unsigned char* media_buffer, int media_size) {
+
+    int frame_size = media_size + CFrameHeaders::GetHeadersLength();
+    _init_buffer(frame_size);
+    memcpy(_media_buffer, media_buffer, media_size);
+    _fh.SetMediaSize(_media_size);
     _fh.WriteHeaders(_frame_buffer);
     return VMI_E_OK;
 }
@@ -338,55 +414,6 @@ int CvMIFrame::copyMediaToMem(unsigned char* buffer, int size) {
         return VMI_E_INVALID_PARAMETER;
     }
     memcpy(buffer, _media_buffer, size);
-    return VMI_E_OK;
-}
-
-int CvMIFrame::sendToRTP(UDP* sock, int mtu, unsigned int& seq) {
-
-    if (sock && sock->isValid())
-    {
-        char RTPframe[RTP_MAX_FRAME_LENGTH];
-        int UDPPacketSize = mtu - IP_HEADERS_LENGTH;
-        int RTPPacketSize = UDPPacketSize - UDP_HEADERS_LENGTH;
-        int payloadSize = RTPPacketSize - RTP_HEADERS_LENGTH;
-
-        char* p = (char*)_frame_buffer;
-        CRTPFrame frame((unsigned char*)RTPframe, RTPPacketSize);
-        int bEndOfFrame = false;
-        int remainingLen = _frame_size;
-
-        while( remainingLen>0 ) {
-        
-            int len, result, marker=0;
-
-            // First, construct the full RTP frame
-            int payloadLen = MIN(remainingLen, payloadSize);
-            memcpy(RTPframe+RTP_HEADERS_LENGTH, p, payloadLen);
-            remainingLen -= payloadLen;
-            p += payloadLen;
-            if( remainingLen == 0 )
-            marker = 1;
-            frame.writeHeader( seq++, marker, 98);
-            if( payloadLen < payloadSize ) {
-                LOG("padding payload=%d", payloadSize-payloadLen);
-                ::memset(RTPframe+RTP_HEADERS_LENGTH+payloadLen, 0, payloadSize-payloadLen);
-            }
-            //frame.dumpHeader((char*)_RTPframe);
-
-            // Then send UDP packet
-            len = RTPPacketSize;
-            result = sock->writeSocket(RTPframe, &len);
-            if( result != -1 ) {
-                LOG("write (size=%d) to socket, result=%d, RTP packet #%d, payloadlen=%d, remaining=%d",
-                    len, result, frame._seq, payloadLen, remainingLen);
-            }
-            else {
-                LOG_ERROR("error write (size=%d) to socket, result=%d, RTP packet #%d, payloadlen=%d, remaining=%d",
-                    len, result, frame._seq, payloadLen, remainingLen);
-                return VMI_E_FAILED_TO_SND_SOCKET;
-            }
-        }
-    }
     return VMI_E_OK;
 }
 
@@ -513,6 +540,8 @@ void CvMIFrame::set_header(MediaHeader header, void* value) {
             _fh.SetInputTimestamp(*static_cast<unsigned long long*>(value)); break;
         case MEDIA_OUT_TIMESTAMP:
             _fh.SetOutputTimestamp(*static_cast<unsigned long long*>(value)); break;
+        case NAME_INFORMATION:
+            _fh.SetName(static_cast<const char*>(value)); break;
         default:
             break;
         }
@@ -564,6 +593,8 @@ void CvMIFrame::get_header(MediaHeader header, void* value) {
             *static_cast<unsigned long long*>(value) = _fh.GetOutputTimestamp(); break;
         case VIDEO_SMPTEFRMCODE:
             *static_cast<int*>(value) = _fh.GetSmpteframeCode(); break;
+        case NAME_INFORMATION:
+            *static_cast<const char**>(value) = _fh.GetName(); break;
         default:
             break;
         }
@@ -573,9 +604,16 @@ void CvMIFrame::get_header(MediaHeader header, void* value) {
     }
 }
 
-void CvMIFrame::refreshHeaders()
-{
+void CvMIFrame::refreshHeaders() {
+
     _fh.ReadHeaders(_frame_buffer);
+    _refresh_from_headers();
+}
+
+void CvMIFrame::writeHeaders() {
+
+    if (_frame_buffer != NULL)
+        _fh.WriteHeaders(_frame_buffer);
 }
 
 

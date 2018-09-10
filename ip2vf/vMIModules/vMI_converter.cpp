@@ -84,7 +84,7 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                 //
                 // A new frame is available: firstly, get the buffer address / size / format
                 //
-                unsigned char* pframeBuffer = (unsigned char*)libvMI_get_frame_buffer(hFrame);
+                unsigned char* pInframeBuffer = (unsigned char*)libvMI_get_frame_buffer(hFrame);
                 libvMI_get_frame_headers(hFrame, MEDIA_PAYLOAD_SIZE, &size);
                 libvMI_get_frame_headers(hFrame, MEDIA_FORMAT, &fmt);
                 libvMI_get_frame_headers(hFrame, VIDEO_DEPTH, &bitdepth);
@@ -94,7 +94,7 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                 if (fmt == MEDIAFORMAT::VIDEO && bitdepth == 10) {
 
                     // Convert from 10bits to 8 bits, "in place". We can do that as the final 
-                    tools::convert10bitsto8bits(pframeBuffer, size, pframeBuffer);
+                    tools::convert10bitsto8bits(pInframeBuffer, size, pInframeBuffer);
                     int newSize = size * 8 / 10;
 
                     // Set correct headers
@@ -109,6 +109,46 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                         libvMI_pin_handle out = libvMI_get_output_handle(g_vMIModule, i);
                         //LOG("Send buffer to output [%d]", out);
                         libvMI_send(g_vMIModule, out, hFrame);
+                    }
+                }
+                else if (fmt == MEDIAFORMAT::VIDEO && bitdepth == 8) {
+
+                    // Convert from 8bits to 10bits, can't be done "in place" 
+                    int newSize = size * 10 / 8;
+
+                    int w, h, framenumber, timestamp;
+                    libvMI_get_frame_headers(hFrame, VIDEO_WIDTH, &w);
+                    libvMI_get_frame_headers(hFrame, VIDEO_HEIGHT, &h);
+                    libvMI_get_frame_headers(hFrame, MEDIA_FRAME_NB, &framenumber);
+                    libvMI_get_frame_headers(hFrame, MEDIA_TIMESTAMP, &timestamp);
+
+                    struct vMIFrameInitStruct init;
+                    init._media_format = MEDIAFORMAT::VIDEO;
+                    init._media_size = 0;
+                    init._video_width = w;
+                    init._video_height = h;
+                    init._video_depth = 10;
+                    init._video_smpfmt = SAMPLINGFMT::YCbCr_4_2_2;
+                    libvMI_frame_handle newH = libvmi_frame_create_ext(init);
+                    // keep same frame number and media timestamp
+                    libvMI_set_frame_headers(newH, MEDIA_FRAME_NB, &framenumber);
+                    libvMI_set_frame_headers(newH, MEDIA_TIMESTAMP, &timestamp);
+
+                    if (newH) {
+
+                        LOG("new frame #%d", newH);
+                        unsigned char* pOutframeBuffer = (unsigned char*)libvMI_get_frame_buffer(newH);
+                        tools::convert8bitsto10bits(pInframeBuffer, size, pOutframeBuffer);
+
+                        // Send the frame to all output
+                        int nb_output = libvMI_get_output_count(g_vMIModule);
+                        for (int i = 0; i < nb_output; i++) {
+
+                            libvMI_pin_handle out = libvMI_get_output_handle(g_vMIModule, i);
+                            int result = libvMI_send(g_vMIModule, out, newH);
+                            LOG("%s to send frame #%d to output [%d]", (result == 0 ? "OK" : "KO"), newH, out);
+                        }
+                        libvmi_frame_release(newH);
                     }
                 }
 

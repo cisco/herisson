@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#include "pins/pktTS.h"                                         /* PktTS hook */
+
 /**********************************************************************************************
 *
 * CInRTP
@@ -32,11 +34,14 @@ CInRTP::CInRTP(CModuleConfiguration* pMainCfg, int nIndex) : CIn(pMainCfg, nInde
     PROPERTY_REGISTER_OPTIONAL("ip", _ip, "");
     _waitForNextFrame = true;
 #ifdef USE_NETMAP
-    _udpSock = (strncmp(_interface, "netmap-", 7) == 0) ? new Netmap() : new UDP();
-#else
-    _udpSock = new UDP();
+    if(strncmp(_interface, "netmap-", 7) == 0)
+        _udpSock = new Netmap();
+    else
 #endif
-
+#ifdef HAVE_PROBE
+        if((_udpSock = pktTSconstruct(_pConfig)) == 0)              /* PktTS hook */
+#endif
+            _udpSock = new UDP();
 }
 
 CInRTP::~CInRTP() 
@@ -115,13 +120,13 @@ int CInRTP::read(CvMIFrame* frame)
         }
 
         // Create a new vMI frame from the udp input connection
-        int result = frame->createFromUDP(_udpSock, _nModuleId);
+        int result = frame->createFrameFromUDP(_udpSock, _nModuleId);
         if (result != VMI_E_OK) {
             if (result == VMI_E_FAILED_TO_RCV_SOCKET || result == VMI_E_CONNECTION_CLOSED)
                 // Not really an error...
                 _udpSock->closeSocket();
             else
-                LOG_ERROR("errors when try to get vMI frame...");
+                LOG_ERROR("errors when trying to get vMI frame...");
             _waitForNextFrame = true;
             return VMI_E_INVALID_FRAME;
         }

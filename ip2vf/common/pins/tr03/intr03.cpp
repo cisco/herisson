@@ -135,7 +135,7 @@ int CInTR03::read(CvMIFrame* vmiFrame)
                             _firstFrame = false;
                             //int framesize = _w*_h * 2 * 10 / 8;
                             int framesize = _w*_h * 2 * _fmt / 8;
-                            vmiFrame->createUninitialized(framesize+ CFrameHeaders::GetHeadersLength());
+                            vmiFrame->createFrameUninitialized(framesize+ CFrameHeaders::GetHeadersLength());
                             //_videoFrameBuffer = new unsigned char [this->getVideoFrameSize()];
                             this->SetMediaSize(framesize);
                             //LOG_ERROR("First frame !");

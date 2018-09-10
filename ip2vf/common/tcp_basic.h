@@ -66,16 +66,19 @@ public:
     virtual ~UDP();
 
     void setTimeout(const int tcp_timeout);
-	int resolveEndpoints(const char* remote_addr, const char* local_addr, int port, bool modelisten, const char* ifname = NULL);
-	int configureSocket(const char* remote_addr, const char* local_addr, int port, bool modelisten, const char* ifname = NULL);
-    virtual int  openSocket(const char* remote_addr,const char* local_addr, int port, bool modelisten,const char* ifname = NULL);
+	int resolveEndpoints(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
+	int configureSocket(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
+    virtual int  openSocket(const char* remote_addr,const char* local_addr, int port, bool modelisten = false,const char* ifname = NULL);
     int  openRawSocket();
     virtual int  closeSocket();
     virtual int  readSocket(char *buffer, int *len);
     //int  readSocket2(char *buffer, int *len);
     virtual int  writeSocket(char *buffer, int *len);
-    virtual int  writeBatchedSocket(char **buffer, int count, int *len);
+    virtual int  writeBatchedSocket(char **buffer, int *len, int count);
     bool isValid() { return _sock!=INVALID_SOCKET; };
+    SOCKET getSock() { return _sock; };
+
+    virtual void pktTSctl(int, unsigned int = 0, long long = 0) {};
 };  // UDP
 
 #ifdef USE_NETMAP

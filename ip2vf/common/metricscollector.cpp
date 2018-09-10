@@ -20,6 +20,7 @@ MetricsCollector::MetricsCollector(std::string &ip, int port): _name{}
     _mtn_port = -1;
     _collectdSocket.openSocket(ip.c_str(), NULL, port, false);
     _frame = nullptr;
+    _pktTSframe = nullptr;
     if (!_collectdSocket.isValid())
     {
         LOG_ERROR("Could not open socket to collectd on %s:%d\n", ip.c_str(), port);
@@ -32,6 +33,8 @@ MetricsCollector::~MetricsCollector()
     _collectdSocket.closeSocket();
     if (_frame)
         delete _frame;
+    if (_pktTSframe)
+        delete _pktTSframe;
 }
 
 void MetricsCollector::setFPS(double fps, int pinId)
@@ -120,4 +123,57 @@ void MetricsCollector::tick()
     }
 
 
+}
+
+#include <cmath>
+
+void
+MetricsCollector::pktTSmetricsinit(int flg)
+{
+    if(_frame == nullptr)
+        return;
+
+    _pktTSflg = flg;
+    _pktTSframe = new CollectdFrame("vMI_pktTSmetrics", _name);
+}
+
+void
+MetricsCollector::pktTSmetrics(
+    const std::chrono::high_resolution_clock::time_point ts,
+    const char* type, int pin, double stats[], int n)
+{
+    int i, len;
+    PinInfo pi;
+    std::string ti;
+    std::ostringstream res;
+
+    if(_pktTSframe == nullptr || n <= 0)
+        return;
+
+    _pktTSframe->resetFrame();
+    _pktTSframe->setTimestamp(ts);
+    _pktTSframe->setType(type);
+
+    pi = _pinsVec[pin];
+    if(pi._direction == DIRECTION_INPUT)
+        ti = "i" + std::to_string(pi._id);
+    else
+        ti = "o" + std::to_string(pi._id);
+    _pktTSframe->setTypeInstance(ti.c_str());
+
+    _pktTSframe->addRecordn(COLLECTD_DATACODE_GAUGE, (void*)stats, n);
+
+    if(_pktTSflg){
+        res << this->_name << ": " << type << ": ";
+        res << ti << ": " << DISPFORMAT_BEGIN;
+        for(i = 0; i < n-1; i++)
+            res << (long long)round(stats[i]) << ", ";
+        res << (long long)round(stats[i]) << DISPFORMAT_CLOSE;
+        LOG_INFO(res.str().c_str());
+    }
+
+    if(_collectdSocket.isValid()){
+        len = _pktTSframe->getLen();
+        _collectdSocket.writeSocket((char*)_pktTSframe->getBuffer(), &len);
+    }
 }

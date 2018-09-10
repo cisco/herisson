@@ -112,8 +112,15 @@ void CFileDataSource::waitForNextFrame()
         int timetosleep = (int)(microsecond - deltatime);
         _time = currenttime + timetosleep;
         //LOG_INFO("cur=%lld, delta=%lld, timetosleep=%d", currenttime, deltatime, timetosleep);
-        if (timetosleep > 0)
+        if (timetosleep > 0) {
+            // We are in advance... let wait a little before get next chunk
             usleep(timetosleep);
+        }
+        else if (timetosleep < -10000000) {
+            // Too much in late... try to resync again
+            LOG_INFO("Too much in late... resync. (in late of %.02f seconds)", (double)(-timetosleep/1000000.0));
+            _time = currenttime;
+        }
     }
 }
 

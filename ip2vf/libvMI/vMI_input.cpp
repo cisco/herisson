@@ -40,6 +40,8 @@ void CvMIInput::_init(const std::string &name, int id)
     m_id = id;
 
     m_preconfig = "name=" + name + "," + m_preconfig;
+    m_preconfig = m_preconfig + "mHandle=" + std::to_string(m_handle) + ",";
+    m_preconfig = m_preconfig + "pinId=" + std::to_string(id) + ",";
     LOG_INFO("m_preconfig=%s", m_preconfig.c_str());
     m_config = new CModuleConfiguration(m_preconfig.c_str());
 

@@ -36,6 +36,8 @@ public:
     int  _calculate_pixel_size_in_bits();
 
 public:
+    CvMIFrame & operator=(const CvMIFrame &other);
+
     // Accesseurs
     unsigned char* getMediaBuffer() { return _media_buffer; };
     unsigned char* getFrameBuffer() { return _frame_buffer; };
@@ -49,22 +51,28 @@ public:
     int releaseRef();
     int getRef() { return _ref_counter; };
 
-    int createVideoFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId);
-    int createAudioFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId);
-    int createFromMem(unsigned char* buffer, int buffer_size, int moduleId);
-    int createUninitialized(int size);
-    int createFromTCP(TCP* sock, int moduleId);
-    int createFromUDP(UDP* sock, int moduleId);
-    int create(CFrameHeaders* fh);
+    // Frame creation
+    int createFrameFromSmpteFrame(CSMPTPFrame* smpteframe, SMPTEFRAME_BUFFERS srcBuffer, int moduleId);
+    int createFrameFromMem(unsigned char* buffer, int buffer_size, int moduleId);
+    int createFrameUninitialized(int size);
+    int createFrameFromMediaSize(int size);
+    int createFrameFromTCP(TCP* sock, int moduleId);
+    int createFrameFromUDP(UDP* sock, int moduleId);
+    int createFrameFromHeaders(CFrameHeaders* fh);
 
+    // Media content management
+    int setMediaContent(unsigned char* media_buffer, int media_size);
+
+    // Frame export
     int copyFrameToMem(unsigned char* buffer, int size);
     int copyMediaToMem(unsigned char* buffer, int size);
-    int sendToRTP(UDP* sock, int mtu, unsigned int& seq);
     int sendToTCP(TCP* sock);
 
+    // HEaders management
     void set_header(MediaHeader header, void* value);
     void get_header(MediaHeader header, void* value);
     void refreshHeaders();
+    void writeHeaders();
 };
 
 #endif //_VMIFRAME_H

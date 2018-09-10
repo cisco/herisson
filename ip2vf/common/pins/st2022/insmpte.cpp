@@ -40,15 +40,23 @@ CInSMPTE::CInSMPTE(CModuleConfiguration* pMainCfg, int nIndex) : CIn(pMainCfg, n
 
     PROPERTY_REGISTER_OPTIONAL("fmt", _fmt, 10);
     PROPERTY_REGISTER_OPTIONAL("queuesize", _nbSMPTEFrameToQueue, MAX_NB_SMPTE_FRAME);
-    
+    PROPERTY_REGISTER_OPTIONAL("onlyvideo", _onlyvideo, 0);
+
     LOG_INFO("Nb SMPTE Frame to queue=%d", _nbSMPTEFrameToQueue);
+    LOG_INFO("Output bits format=%d bits", _fmt);
+
+    if (_onlyvideo == 1) 
+        LOG_INFO("Warning: VIDEO ONLY MODE");
 
     // Detect and init the source from the PIN configuration
     _source = CDMUXDataSource::create(_pConfig);
 
     // Create a fix number of SMPTE frame
     for (int i = 0; i < _nbSMPTEFrameToQueue; i++) {
-        _smpteFrameArray.push_back(new SmpteFrameBuffer());
+        SmpteFrameBuffer* frameBufferToQueue = new SmpteFrameBuffer();
+        if (_onlyvideo == 1)
+            frameBufferToQueue->_frame.setVideoOnlyMode(true);
+        _smpteFrameArray.push_back(frameBufferToQueue);
     }
 }
 
@@ -112,6 +120,13 @@ int CInSMPTE::_rcv_process() {
     sampleSize = _source->getSampleSize();
     LOG_INFO("%s: Detect samplesize=%d", _name.c_str(), sampleSize);
 
+    unsigned int mediatimestamp;
+#ifdef HAVE_PROBE
+    CRTPDataSource* pktTSctl = 0;                               /* PktTS hook */
+    if(_source->getType() == DataSourceType::TYPE_SOCKET)
+        pktTSctl = static_cast<CRTPDataSource*>(_source);
+#endif
+
     while (_bStarted) {
 
         _source->waitForNextFrame();
@@ -120,8 +135,9 @@ int CInSMPTE::_rcv_process() {
         std::lock_guard<std::mutex> lock(pFrame->_lock);
         //LOG_INFO("%s: start to receive a SMPTE frame on buffer %d", pin->_name.c_str(), framePointer);
         pFrame->_frame.initNewFrame();
-        pFrame->_frame.setFrameNumber(frameCounter++);
+        //pFrame->_frame.setFrameNumber(frameCounter++);
 
+        mediatimestamp = 0;                                     /* PktTS hook */
         while (!pFrame->_frame.isComplete()) {
 
             // First, keep the full RTP frame from the current UDP packet
@@ -151,7 +167,18 @@ int CInSMPTE::_rcv_process() {
             lastSeq = frame._seq;
 
             pFrame->_frame.addRTPPacket(&frame);
+
+#ifdef HAVE_PROBE
+            if(pktTSctl != 0 && mediatimestamp == 0){           /* PktTS hook */
+                if((mediatimestamp = pFrame->_frame.getTimestamp()) != 0)
+                    pktTSctl->pktTSctl(1, mediatimestamp);
+            }
+#endif
         }
+#ifdef HAVE_PROBE
+        if(pktTSctl != 0 && mediatimestamp != 0)                /* PktTS hook */
+            pktTSctl->pktTSctl(0, pFrame->_frame.getTimestamp());
+#endif
 
         // Detect stop
         if (!_bStarted)
@@ -219,7 +246,7 @@ int CInSMPTE::read(CvMIFrame* frame)
         MEDIAFORMAT kindOfBuffer = _currentFrame->_frame.getMediaBufferType(buf);
         switch (kindOfBuffer) {
         case MEDIAFORMAT::VIDEO:
-            frame->createVideoFromSmpteFrame(&_currentFrame->_frame, buf, _nModuleId); 
+            frame->createFrameFromSmpteFrame(&_currentFrame->_frame, buf, _nModuleId); 
             if (_fmt == 8) {
                 CFrameHeaders* headers = frame->getMediaHeaders();
                 int offset = CFrameHeaders::GetHeadersLength();
@@ -229,10 +256,13 @@ int CInSMPTE::read(CvMIFrame* frame)
                 headers->SetMediaSize(mediasize);
                 headers->SetDepth(8);
                 headers->WriteHeaders(frame->getFrameBuffer());
+                // We change headers, then we need to refresh vMI frame from headers content
+                frame->refreshHeaders();
             }
             break;
         case MEDIAFORMAT::AUDIO:
-            frame->createAudioFromSmpteFrame(&_currentFrame->_frame, buf, _nModuleId); break;
+            frame->createFrameFromSmpteFrame(&_currentFrame->_frame, buf, _nModuleId); 
+            break;
         case MEDIAFORMAT::ANC:
             // TODO
             return -1;
@@ -246,7 +276,7 @@ int CInSMPTE::read(CvMIFrame* frame)
         return -1;
     }
 
-    return 0;
+    return VMI_E_OK;
 }
 
 void CInSMPTE::start()

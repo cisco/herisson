@@ -112,6 +112,37 @@ void CollectdFrame::addRecord(CollectdDataCode dc, void* data)
     }
 }
 
+void CollectdFrame::addRecordn(CollectdDataCode dc, void* data, uint16_t n)
+{
+    uint16_t partlen = 6 + n * 9;
+
+    _buffer.push_back((unsigned char) (PART_TYPE_VALUE >> 8));
+    _buffer.push_back((unsigned char) (PART_TYPE_VALUE & 0xff));
+    _buffer.push_back((unsigned char) (partlen >> 8));
+    _buffer.push_back((unsigned char) (partlen & 0xff));
+    _buffer.push_back((unsigned char) (n >> 8));
+    _buffer.push_back((unsigned char) (n & 0xff));
+
+    for (int j = 0; j < n; j++)
+    {
+        _buffer.push_back((unsigned char) (dc));
+    }
+    for (int j = 0; j < n; j++)
+    {
+        if (dc == COLLECTD_DATACODE_GAUGE)
+        {
+            _buffer.resize(_buffer.size() + 8);
+            std::memcpy((void *) (_buffer.data() + _buffer.size() - 8), data, 8);
+        }
+        else
+        {
+            for (int i = 0; i<8; i++)
+                _buffer.push_back(((unsigned char*)data)[7-i]);
+        }
+        data = ((unsigned char *) data) + 8;
+    }
+}
+
 void CollectdFrame::setTimestamp(const std::chrono::high_resolution_clock::time_point &date)
 {
     if (date == _currentDate)

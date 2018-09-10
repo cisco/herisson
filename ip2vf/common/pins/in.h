@@ -35,7 +35,7 @@ protected:
     int         _nIndex;
     int         _nModuleId;
     bool        _firstFrame;
-    //CFrameHeaders       _headers;
+    //CFrameHeaders     _headers;
     MEDIAFORMAT         _mediaformat;
     PinConfiguration*   _pConfig;
     bool            _bStarted;
@@ -193,6 +193,7 @@ private:
     CQueue<int>     _q;
     std::thread     _t;
     int             _nbSMPTEFrameToQueue;
+    int             _onlyvideo;
     SMPTE_STANDARD_SUITE _streamType;
 
 public:

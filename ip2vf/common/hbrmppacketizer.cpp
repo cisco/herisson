@@ -3,12 +3,14 @@
 #include <cstring>
 #include <iostream>
 #include <cmath>
+#include <chrono>
+#include <thread>       // std::this_thread
 
 #include "common.h"
 #include "error.h"
 #include "log.h"
 #include "tools.h"
-#include "hbrmppacketizer.h"
+#include "packetizer.h"
 
 using namespace std;
 
@@ -18,7 +20,7 @@ using namespace std;
 *
 ***********************************************************************************************/
 
-CHBRMPPacketizer::CHBRMPPacketizer() {
+CHBRMPPacketizer::CHBRMPPacketizer(int mtu) : CRTPPacketizer(mtu){
 
     _RTPPacketSize    = RTP_PACKET_SIZE;
     _HBRMPPacketSize  = _RTPPacketSize - RTP_HEADERS_LENGTH;
@@ -34,7 +36,7 @@ void CHBRMPPacketizer::setProfile(CSMPTPProfile*  profile) {
         _profile.setProfile(profile->getProfileName().c_str());
 }
 
-int CHBRMPPacketizer::send(UDP* sock, char* mediabuffer, int mediabuffersize, int payloadtype) {
+int CHBRMPPacketizer::send(UDP* sock, char* buffer, int buffersize) {
 
     if (_profile.getStandard() == SMPTE_NOT_DEFINED) {
         LOG_ERROR("SMPTE profile not initialized...");
@@ -50,7 +52,7 @@ int CHBRMPPacketizer::send(UDP* sock, char* mediabuffer, int mediabuffersize, in
         hbrmpFrame.initFixedHBRMPValuesFromProfile(&_profile);
 
         int bEndOfFrame = false;
-        unsigned int remainingLen = mediabuffersize;
+        unsigned int remainingLen = buffersize;
         unsigned int sentLen = 0;
         unsigned int packetSentNb = 0;
         unsigned int timestamp_ref = _hbrmpTimestamp;
@@ -58,7 +60,7 @@ int CHBRMPPacketizer::send(UDP* sock, char* mediabuffer, int mediabuffersize, in
         unsigned int oldPayloadSent = 0;
         unsigned int oldPixelSent = 0;
         unsigned int nbPacketToSkip = 0;
-        char* p = mediabuffer;
+        char* p = buffer;
         char* packetPayloadPtr = _RTPframe + RTP_HEADERS_LENGTH + HBRMP_HEADERS_LENGTH;
 
         while (remainingLen>0) {
@@ -84,7 +86,7 @@ int CHBRMPPacketizer::send(UDP* sock, char* mediabuffer, int mediabuffersize, in
 
             // Write correct headers for this packet
             _seq = (_seq + 1) % 65536;
-            rtpFrame.writeHeader(_seq, marker, payloadtype);
+            rtpFrame.writeHeader(_seq, marker, _payloadtype);
             hbrmpFrame.writeHeader(_frameCount, _hbrmpTimestamp);
 
             // Then send UDP packet
@@ -118,6 +120,10 @@ int CHBRMPPacketizer::send(UDP* sock, char* mediabuffer, int mediabuffersize, in
                 LOG_INFO("_hbrmpTimestamp loop=%lu/%lu", _hbrmpTimestamp,
                     oldTimestamp);
             oldPixelSent = pixelSent;
+
+            if (packetSentNb % 500 == 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
         _frameCount = (_frameCount + 1) % 256;
     }

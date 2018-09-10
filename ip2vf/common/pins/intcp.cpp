@@ -79,7 +79,7 @@ int CInTCP::read(CvMIFrame* frame)
     if (_tcpSock.isValid()) {
 
         // Create a new vMI frame from the tcp input connection
-        result = frame->createFromTCP(&_tcpSock, _nModuleId);
+        result = frame->createFrameFromTCP(&_tcpSock, _nModuleId);
         if (result != VMI_E_OK) {
             if (result == VMI_E_FAILED_TO_RCV_SOCKET)
                 // Not really an error...

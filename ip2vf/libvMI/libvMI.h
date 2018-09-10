@@ -69,6 +69,7 @@ enum CmdType {
 enum VMIPARAMETER {
     MAX_FRAMES_IN_LIST,    /*!< GET/SET Maximal number of frames on the internal frame list */
     CUR_FRAMES_IN_LIST,    /*!< GET     number of frames on the internal frame list */
+    FREE_FRAMES_IN_LIST,   /*!< GET     number of frames on the internal frame list */
 };
 
 /**
@@ -109,6 +110,7 @@ enum MediaHeader {
     MEDIA_IN_TIMESTAMP  = 16, /*!< media timestamp */
     MEDIA_OUT_TIMESTAMP = 17, /*!< media timestamp */
     VIDEO_SMPTEFRMCODE  = 18, /*!< media format video only: SAMPLE parameter from the source stream */
+    NAME_INFORMATION    = 19, /*!< name information from sender module */
 };
 
 /**
@@ -450,6 +452,13 @@ VMILIBRARY_API libvMI_pin_handle libvMI_get_input_handle(const libvMI_module_han
 * \return handle of ouput pin
 */
 VMILIBRARY_API libvMI_pin_handle libvMI_get_output_handle(const libvMI_module_handle module, int index);
+
+
+VMILIBRARY_API const char* libvMI_get_module_name(const libvMI_module_handle hModule);
+VMILIBRARY_API const char* libvMI_get_input_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hInput);
+VMILIBRARY_API const char* libvMI_get_output_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput);
+VMILIBRARY_API int libvMI_get_number_of_modules();
+VMILIBRARY_API libvMI_module_handle libvMI_get_module_by_index(int index);
 
 /**
  *  \brief Starts ingesting data on a module. 

@@ -61,9 +61,7 @@ public:
     * commands the module
     */
     int start();
-
     int stop();
-
 
     /**
     * returns a collection of input streams
@@ -94,6 +92,13 @@ public:
         return m_config;
     }
 
+    const char* getName() {
+        return m_config._name.c_str();
+    }
+
+    MetricsCollector* &getMetricsCollector(){
+        return m_zmqlogger;
+    }
 };
 
 

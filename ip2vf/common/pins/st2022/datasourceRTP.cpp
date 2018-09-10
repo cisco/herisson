@@ -8,6 +8,11 @@
 #include "datasource.h"
 #include "moduleconfiguration.h"
 #include "configurable.h"
+
+#ifdef HAVE_PROBE
+#include "pins/pktTS.h"                                         /* PktTS hook */
+#endif
+
 using namespace std;
 
 CRTPDataSource::CRTPDataSource() 
@@ -39,7 +44,10 @@ void CRTPDataSource::init(PinConfiguration *pconfig)
     // This allow to setup a network RTP stream 
     LOG_INFO("data stream from port '%d'",_port);
     if (!_udpSock)
-        _udpSock = new UDP();
+#ifdef HAVE_PROBE
+        if((_udpSock = pktTSconstruct(_pConfig)) == 0)          /* PktTS hook */
+#endif
+            _udpSock = new UDP();
 
     if (_udpSock && !_udpSock->isValid())
         result = _udpSock->openSocket(_zmqip, _ip, _port, true);
@@ -51,6 +59,13 @@ void CRTPDataSource::waitForNextFrame()
 {
     // Do nothing for this source
 }
+
+#ifdef HAVE_PROBE
+void CRTPDataSource::pktTSctl(int ctl, unsigned int identifier) /* PktTS hook */
+{
+	_udpSock->pktTSctl(ctl, identifier);
+}
+#endif
 
 int CRTPDataSource::read(char* buffer, int size)
 {

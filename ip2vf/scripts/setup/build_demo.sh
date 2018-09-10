@@ -21,9 +21,12 @@ curpath=$PWD
 cd ..
 mkdir -p build
 cd build
+mkdir -p linux
+cd linux
+
 export CC=gcc-5
 export CXX=g++-5
-cmake -DCMAKE_BUILD_TYPE=Release ../ip2vf 
+cmake -DCMAKE_BUILD_TYPE=Release ../../ip2vf 
 make -j $jobs
 
 cd ${startpath}

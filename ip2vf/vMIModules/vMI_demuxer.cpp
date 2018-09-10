@@ -107,7 +107,15 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                 libvMI_get_frame_headers(hFrame, MEDIA_FORMAT, &fmt);
 
                 LOG("receive frame %d on input[%d], fmt=%s(%d), size=%d bytes, at 0x%x", hFrame, in, (fmt== MEDIAFORMAT::VIDEO ?"video":"audio"), fmt, size, pInFrameBuffer);
-
+                
+                int nb = libvMI_get_input_count(g_vMIModule);
+                for (int i = 0; i < nb; i++) {
+                    int inputHandle = libvMI_get_input_handle(g_vMIModule, i);
+                }
+                nb = libvMI_get_output_count(g_vMIModule);
+                for (int i = 0; i < nb; i++) {
+                    int outputHandle = libvMI_get_output_handle(g_vMIModule, i);
+                }
                 if ((fmt == MEDIAFORMAT::VIDEO) || (fmt == MEDIAFORMAT::AUDIO)) {
 
                     /*

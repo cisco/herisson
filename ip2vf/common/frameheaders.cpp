@@ -21,13 +21,13 @@
 
 #define HEADERS_VERSION_MAJOR   2
 #define HEADERS_VERSION_MINOR   0
-#define HEADERS_VERSION_PATCH   2
+#define HEADERS_VERSION_PATCH   3
 
 #define COMMON_HEADER_LENGTH    32      // in bytes
 #define MEDIA_HEADER_OFFSET     COMMON_HEADER_LENGTH 
 #define MEDIA_HEADER_LENGTH     12       // in bytes
 #define EXT_HEADER_OFFSET       MEDIA_HEADER_OFFSET+MEDIA_HEADER_LENGTH  
-#define EXT_HEADER_LENGTH       16      // in bytes
+#define EXT_HEADER_LENGTH       (16+FRAME_NAME_LENGTH)      // in bytes 16+FRAME_NAME_LENGTH
 
 #define EXTRACT_INTEGER(p, i)   ((p[i+0] << 24) + (p[i+1] << 16) + (p[i+2] << 8) + p[i+3])
 #define EXTRACT_LONG_LONG(p, i) (((unsigned long long)p[i+0] << 56) + ((unsigned long long)p[i+1] << 48) + ((unsigned long long)p[i+2] << 40) + ((unsigned long long)p[i+3] << 32) + (p[i+4] << 24) + (p[i+5] << 16) + (p[i+6] << 8) + p[i+7])
@@ -64,6 +64,7 @@ CFrameHeaders::CFrameHeaders() {
     //ext
     _inputtimestamp = 0;
     _outputtimestamp= 0;
+    _namedata[0]    = '\0';
 };
 
 /*!
@@ -101,6 +102,8 @@ void CFrameHeaders::CopyHeaders(const CFrameHeaders* from) {
     // Ext part
     _inputtimestamp = from->_inputtimestamp;
     _outputtimestamp= from->_outputtimestamp;
+    STRNCPY(_namedata, from->_namedata, FRAME_NAME_LENGTH);
+    _namedata[FRAME_NAME_LENGTH - 1] = '\0';
 }
 
 int CFrameHeaders::WriteHeaders(unsigned char* buffer, int frame_nb) {
@@ -203,6 +206,8 @@ int CFrameHeaders::WriteHeaders(unsigned char* buffer, int frame_nb) {
     buffer[EXT_HEADER_OFFSET + 14] = (_outputtimestamp >> 8) & 0b11111111;
     buffer[EXT_HEADER_OFFSET + 15] = _outputtimestamp & 0b11111111;
 
+    STRNCPY((char*)&buffer[EXT_HEADER_OFFSET + 16], _namedata, FRAME_NAME_LENGTH);
+
     return VMI_E_OK;
 }
 
@@ -232,38 +237,46 @@ int CFrameHeaders::ReadHeaders(unsigned char* buffer) {
         return VMI_E_INVALID_HEADER_VERSION;
     }
 
-    _framenb = EXTRACT_INTEGER(p, 8);
-    _moduleid  = p[12];
-    _mediafmt  = static_cast<MEDIAFORMAT>(p[13]);
-    _mediasize = EXTRACT_INTEGER(p, 16);
+    try {
+        _framenb = EXTRACT_INTEGER(p, 8);
+        _moduleid = p[12];
+        _mediafmt = static_cast<MEDIAFORMAT>(p[13]);
+        _mediasize = EXTRACT_INTEGER(p, 16);
 
-    _mediatimestamp = EXTRACT_INTEGER(p, 20);
-    _srctimestamp   = EXTRACT_LONG_LONG(p, 24);
+        _mediatimestamp = EXTRACT_INTEGER(p, 20);
+        _srctimestamp = EXTRACT_LONG_LONG(p, 24);
 
-    p = (unsigned char*)buffer + MEDIA_HEADER_OFFSET;
-    if (_mediafmt == MEDIAFORMAT::VIDEO) {
-        _w              = (p[0] << 8) + p[1];
-        _h              = (p[2] << 8) + p[3];
-        _frametype      = static_cast<FRAMETYPE>((p[4] & 0b10000000) >> 7);
-        _odd            = static_cast<FIELDTYPE>((p[4] & 0b01000000) >> 6);
-        _pgroupsize     = (p[4] & 0b00111111);
-        _colorimetry    = static_cast<COLORIMETRY>((p[5] & 0b11100000) >> 5);
-        _samplingformat = static_cast<SAMPLINGFMT>(p[5] & 0b00011111);
-        _depth          = p[6];
-        _framerateCode  = p[7];
-        _smpteframeCode = p[8];
+        p = (unsigned char*)buffer + MEDIA_HEADER_OFFSET;
+        if (_mediafmt == MEDIAFORMAT::VIDEO) {
+            _w = (p[0] << 8) + p[1];
+            _h = (p[2] << 8) + p[3];
+            _frametype = static_cast<FRAMETYPE>((p[4] & 0b10000000) >> 7);
+            _odd = static_cast<FIELDTYPE>((p[4] & 0b01000000) >> 6);
+            _pgroupsize = (p[4] & 0b00111111);
+            _colorimetry = static_cast<COLORIMETRY>((p[5] & 0b11100000) >> 5);
+            _samplingformat = static_cast<SAMPLINGFMT>(p[5] & 0b00011111);
+            _depth = p[6];
+            _framerateCode = p[7];
+            _smpteframeCode = p[8];
+        }
+        else
+        {
+            _channelnb = p[0];
+            _audiofmt = static_cast<AUDIOFMT>((p[1] & 0b11110000) >> 4);
+            _samplerate = static_cast<SAMPLERATE>(p[1] & 0b00001111);
+            _packettime = (p[2] << 8) + p[3];
+        }
+
+        p = (unsigned char*)buffer + EXT_HEADER_OFFSET;
+        _inputtimestamp = EXTRACT_LONG_LONG(p, 0);
+        _outputtimestamp = EXTRACT_LONG_LONG(p, 8);
+        STRNCPY(_namedata, (const char*)&p[16], FRAME_NAME_LENGTH);
+        _namedata[FRAME_NAME_LENGTH - 1] = '\0';
     }
-    else
-    {
-        _channelnb  = p[0];
-        _audiofmt   = static_cast<AUDIOFMT>((p[1] & 0b11110000) >> 4);
-        _samplerate = static_cast<SAMPLERATE>(p[1] & 0b00001111);
-        _packettime = (p[2] << 8) + p[3];
+    catch (...) {
+        LOG_ERROR("Major error when reading vMI headers... seems data is corrupted. skip this frame!");
+        return VMI_E_INVALID_HEADERS;
     }
-
-    p = (unsigned char*)buffer + EXT_HEADER_OFFSET;
-    _inputtimestamp  = EXTRACT_LONG_LONG(p, 0);
-    _outputtimestamp = EXTRACT_LONG_LONG(p, 8);
 
     return VMI_E_OK;
 }
@@ -274,18 +287,7 @@ void CFrameHeaders::DumpHeaders(unsigned char* frame)
     LOG_INFO("------");
 
     if (frame != NULL) {
-        int byte_per_line = 8;
-        for (int i = 0; i < FRAME_HEADER_LENGTH; i += byte_per_line) {
-            char token[8];
-            char line[128];
-            line[0] = '\0';
-            int nb = MIN(byte_per_line, FRAME_HEADER_LENGTH - i);
-            for (int j = 0; j < nb; j++) {
-                SNPRINTF(token, 8, "0x%02x ", frame[i + j]);
-                STRCAT(line, token);
-            }
-            LOG_INFO("    %s", line);
-        }
+        LOG_DUMP((const char*)frame, FRAME_HEADER_LENGTH);
     }
     LOG_INFO("_version = (%d, %d, %d)", _versionmajor, _versionminor, _versionpatch);
     LOG_INFO("_count = %d", _framenb);
@@ -312,6 +314,9 @@ void CFrameHeaders::DumpHeaders(unsigned char* frame)
         LOG_INFO("_samplerate = %d", _samplerate);
         LOG_INFO("_packettime = %d", _packettime);
     }
+    LOG_INFO("_inputtimestamp = %llu", _inputtimestamp);
+    LOG_INFO("_outputtimestamp = %llu", _outputtimestamp);
+    LOG_INFO("_namedata = '%s'", (_namedata?_namedata:"<null>"));
 }
 
 void CFrameHeaders::InitVideoHeadersFromSMPTE(int w, int h, SAMPLINGFMT samplingfmt, bool interlaced)
@@ -391,4 +396,8 @@ CSMPTPProfile CFrameHeaders::GetProfile() {
     return profile;
 }
 
+void CFrameHeaders::SetName(const char* name) { 
+    STRNCPY(_namedata, name, FRAME_NAME_LENGTH);
+    _namedata[FRAME_NAME_LENGTH - 1] = '\0';
+}
 

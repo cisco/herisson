@@ -116,9 +116,19 @@ void internal_LOG_WARNING(std::string method, const char* message, ...)
     platform_log("%5x:%5x: +w+ %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
     WIN32_HOTFIX_FLUSH_OUTPUT();
 }
+#define _EXTERNAL_LOG_SUPPORT
+#ifdef _EXTERNAL_LOG_SUPPORT
+#include "libvMI.h"
+#include "tcp_basic.h"
+#include "tools.h"
+const char* g_module_not_defined = "<not_defined>";
+UDP g_logUdpSock;
+const char* g_logIP = "localhost";
+int         g_logPort = 1234;
+#endif // _EXTERNAL_LOG_SUPPORT
 void internal_LOG_ERROR(std::string method, const char* message, ...)
 {
-    if( g_logLevel<LOG_LEVEL_ERROR )
+    if (g_logLevel < LOG_LEVEL_ERROR)
         return;
     char dest[4096];
     va_list argptr;
@@ -129,6 +139,24 @@ void internal_LOG_ERROR(std::string method, const char* message, ...)
     platform_log("%5x:%5x: *E* %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
 #else   //_WIN32
     platform_log(DISPFORMAT_START "%5x:%5x: *E* %s: %s" DISPFORMAT_RESET, LOG_COLOR_RED, GETPID, (unsigned int)GETTID, method.c_str(), dest);
+
+#ifdef _EXTERNAL_LOG_SUPPORT
+    char dest2[1500];
+    const char* module_name = (libvMI_get_module_name(0) == NULL ? g_module_not_defined : libvMI_get_module_name(0));
+    SNPRINTF(dest2, "%s|%lld|%5x:%5x: *E* %s: %s", module_name, tools::getUTCEpochTimeInMs(), GETPID, (unsigned int)GETTID, method.c_str(), dest);
+    if (!g_logUdpSock.isValid()) {
+
+        int result = g_logUdpSock.openSocket(g_logIP, NULL, g_logPort, false, "");
+        if (result != 0) {
+            fprintf(stderr, "***ERROR*** can't create UDP socket on [%s]:%d on interface '%s'\r\n", g_logIP, g_logPort, "");
+        }
+    }
+    else {
+        int len = strlen(dest2);
+        int result = g_logUdpSock.writeSocket(dest2, &len);
+    }
+#endif // _EXTERNAL_LOG_SUPPORT
+
 #endif  //_WIN32
     WIN32_HOTFIX_FLUSH_OUTPUT();
 }
@@ -212,3 +240,18 @@ void hotfixWindowsPipeFlushes() {
     fflush(stdout);
 }
 
+#include "tcp_basic.h"
+UDP g_report_sock;
+bool g_report_ini = false;
+void vMI_report_init(const char* ip, int port) {
+    g_report_sock.openSocket((char*)ip, NULL, port);
+    g_report_ini = true;
+}
+void vMI_report_sendmsg(const char* mesg) {
+    if (!g_report_ini) {
+        vMI_report_init("10.228.40.49", 10001);
+    }
+    if (g_report_ini && g_report_sock.isValid()) {
+
+    }
+}

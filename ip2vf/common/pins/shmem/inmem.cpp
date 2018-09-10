@@ -158,22 +158,34 @@ int CInMem::read(CvMIFrame* frame)
             _checkMemorySegment(shmkey, sessionId);
             if (_shm_data != NULL && frame == NULL) {
                 CFrameHeaders headers;
-                headers.ReadHeaders((unsigned char*)_shm_data + memoffset);
+                result = headers.ReadHeaders((unsigned char*)_shm_data + memoffset);
+                if (result != VMI_E_OK) {
+                    LOG_ERROR("%s: ***ERROR*** (2) failed to read headers", _name.c_str());
+                    return E_ERROR;
+                }
                 LOG_ERROR("Drop the frame #%d", headers.GetFrameNumber());
             }
             else if (_shm_data != NULL) {
                 int nb; 
                 CFrameHeaders headers;
-                headers.ReadHeaders((unsigned char*)_shm_data + memoffset);
-                frame->createFromMem((unsigned char*)_shm_data + memoffset, (headers.GetMediaSize()+CFrameHeaders::GetHeadersLength()), _nModuleId);
-                frame->get_header(MEDIA_FRAME_NB, &nb);
-                if (_firstFrame) {
-                    LOG_INFO("Dump received IP2vf headers:");
-                    CFrameHeaders* headers = frame->getMediaHeaders();
-                    headers->DumpHeaders();
-                    _firstFrame = false;
+                result = headers.ReadHeaders((unsigned char*)_shm_data + memoffset);
+                if (result != VMI_E_OK) {
+                    LOG_ERROR("%s: ***ERROR*** (3) failed to read headers", _name.c_str());
+                    return E_ERROR;
                 }
-                LOG("%s: read frame number %d (size=%d) from shmem on page %d", _name.c_str(), nb, _shm_size, _shm_data);
+                result = frame->createFrameFromMem((unsigned char*)_shm_data + memoffset, (headers.GetMediaSize()+CFrameHeaders::GetHeadersLength()), _nModuleId);
+                if (result == VMI_E_OK) {
+                    frame->get_header(MEDIA_FRAME_NB, &nb);
+                    if (_firstFrame) {
+                        LOG_INFO("Dump received IP2vf headers:");
+                        CFrameHeaders* headers = frame->getMediaHeaders();
+                        headers->DumpHeaders();
+                        _firstFrame = false;
+                    }
+                    LOG("%s: read frame number %d (size=%d) from shmem on page %d", _name.c_str(), nb, _shm_size, _shm_data);
+                }
+                else
+                    ret = E_ERROR;
             }
         }
         else if (num < 0) {

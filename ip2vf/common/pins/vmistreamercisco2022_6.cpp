@@ -74,7 +74,7 @@ int CvMIStreamerCisco2022_6::send(CvMIFrame* frame) {
         if (profile.getStandard() == SMPTE_NOT_DEFINED)
         {
             LOG_ERROR("can't find appropriate SMPTE profile. abort!");
-            exit(0);
+            return VMI_E_INVALID_FRAME;
         }
         profile.dumpProfile();
         headers->DumpHeaders();
@@ -98,13 +98,16 @@ int CvMIStreamerCisco2022_6::send(CvMIFrame* frame) {
         _curFrameNb = _frameCount;
         _frame.frame->setFrameNumber(_curFrameNb);
         _curFrameNb = headers->GetFrameNumber();
-        _frame.frame->resetFrame();
+        //_frame.frame->resetFrame();
         _frame.frame->insertVideoContentToSMPTEFrame((char*)srcBuffer);
-        _packetizer.send(&_udpSock, (char*)_frame.frame->getBuffer(), _frame.frame->getBufferSize(), 98);
+        _packetizer.send(&_udpSock, (char*)_frame.frame->getBuffer(), _frame.frame->getBufferSize());
     }
     else if (headers->GetMediaFormat() == MEDIAFORMAT::AUDIO)
     {
         _frame.frame->insertAudioContentToSMPTEFrame(srcBuffer, headers->GetMediaSize());
+    }
+    else {
+        LOG_ERROR("vMI media format not supported (%d)", headers->GetMediaFormat());
     }
 
     return VMI_E_OK;

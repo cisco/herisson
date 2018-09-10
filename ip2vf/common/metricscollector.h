@@ -28,6 +28,8 @@ struct PinInfo {
     };
 };
 
+#include "libvMI_int.h"
+
 class MetricsCollector
 {
 public:
@@ -45,6 +47,12 @@ public:
     // Send periodic data to supervisor
     void tick();
 
+    // PktTS metrics
+    VMILIBRARY_API_INT void pktTSmetricsinit(int);
+    VMILIBRARY_API_INT void pktTSmetrics(
+        const std::chrono::high_resolution_clock::time_point,
+        const char*, int, double[], int);
+
 private:
     UDP _collectdSocket;
     CollectdFrame *_frame;
@@ -57,6 +65,8 @@ private:
 
     std::vector<PinInfo> _pinsVec;
 
+    int           _pktTSflg;
+    CollectdFrame*_pktTSframe;
 };
 
 #endif //_ZMQLOGGER_H

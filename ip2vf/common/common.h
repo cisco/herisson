@@ -11,9 +11,9 @@
  */
 
 #define VERSION_MAJOR 2
-#define VERSION_MINOR 1
+#define VERSION_MINOR 2
 #define VERSION_PATCH 0
-#define VERSION_TAG   "vMI smpte 2110 support"
+#define VERSION_TAG   "vMI probe merge"
 
 enum PinType { 
     PIN_TYPE_NONE        = -1,  // No type
@@ -27,7 +27,8 @@ enum PinType {
     PIN_TYPE_RAWRTP      = 9,
     PIN_TYPE_RAWX264     = 10,  // (out)    Pin allowing to broadcast x264 stream
     PIN_TYPE_TR03        = 11,  // (in/out) Pin allowing to receive/send TR03 stream (on top of RTP)
-    PIN_TYPE_AES67       = 12, //  (in)     Pin allowing to receive AES67
+    PIN_TYPE_AES67       = 12,  // (in)     Pin allowing to receive AES67
+    PIN_TYPE_STORAGE     = 13,  // (out)
     PIN_TYPE_MAX
 };
 
@@ -38,6 +39,7 @@ enum PinType {
                               a == PIN_TYPE_RAWX264    || \
                               a == PIN_TYPE_SMPTE      || \
                               a == PIN_TYPE_TR03       || \
+                              a == PIN_TYPE_STORAGE    || \
                               a == PIN_TYPE_TCP_THUMB   )
 
 #define MEMORY_TYPE(a)      ( a == PIN_TYPE_SHMEM      )
@@ -78,7 +80,7 @@ enum INTERLACED_MODE {
 
 #ifdef _WIN32
 #define SNPRINTF                _snprintf
-#define STRNCPY(dst, src, len)  strncpy_s(dst, sizeof(dst), src, len)
+#define STRNCPY(dst, src, len)  strncpy_s(dst, len, src, len)
 #define STRDUP                  _strdup
 #define STRCAT(a, b)            strcat_s(a, sizeof(a), b)      
 #define GETPID                  _getpid()

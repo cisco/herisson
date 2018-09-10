@@ -94,25 +94,21 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
 
                 LOG("receive frame on input[%d], fmt=%d[%s], size=%d bytes, bitdepth=%d", in, fmt, (fmt == MEDIAFORMAT::VIDEO ? "video" : "audio"), size, bitdepth);
 
-                if (fmt == MEDIAFORMAT::VIDEO && bitdepth == 8) {
+                g_q.push(hFrame);
+                if (g_q.size() > g_nbFrameToDelay) {
 
-                    g_q.push(hFrame);
-                    if (g_q.size() > g_nbFrameToDelay) {
+                    libvMI_frame_handle hFrmToSend = g_q.pop();
+                    // Send the frame to all output
+                    int nb_output = libvMI_get_output_count(g_vMIModule);
+                    for (int i = 0; i < nb_output; i++) {
 
-                        libvMI_frame_handle hFrmToSend = g_q.pop();
-                        // Send the frame to all output
-                        int nb_output = libvMI_get_output_count(g_vMIModule);
-                        for (int i = 0; i < nb_output; i++) {
-
-                            libvMI_pin_handle out = libvMI_get_output_handle(g_vMIModule, i);
-                            int result = libvMI_send(g_vMIModule, out, hFrmToSend);
-                            LOG("%s to send frame #%d to output [%d]", (result == 0 ? "OK" : "KO"), hFrmToSend, out);
-                        }
-                        libvmi_frame_release(hFrmToSend);
+                        libvMI_pin_handle out = libvMI_get_output_handle(g_vMIModule, i);
+                        int result = libvMI_send(g_vMIModule, out, hFrmToSend);
+                        LOG("%s to send frame #%d to output [%d]", (result == 0 ? "OK" : "KO"), hFrmToSend, out);
                     }
+                    libvmi_frame_release(hFrmToSend);
                 }
-
-        }
+            }
             break;
         case CMD_STOP:
             break;

@@ -45,6 +45,7 @@ CSMPTPFrame::CSMPTPFrame() {
     _waitForNextFrame   = true;
     _bFrameComplete     = false;
     _bIncludeAudio      = false;
+    _bVideoOnly         = false;
     _nPadding           = 0;
     _timestamp          = 0;
     _formatDetected     = false;
@@ -76,9 +77,6 @@ CSMPTPFrame& CSMPTPFrame::operator=(const CSMPTPFrame& other)
         LOG_INFO("########### new=0x%p, other=0x%x, size=%d", _frame, other._frame, _completeframelen);
     }
     memcpy(_frame, other._frame, _completeframelen);
-    /*LOG_DUMP10BITS((const char*)_frame, 64);
-    LOG_INFO("------------------");
-    LOG_DUMP10BITS((const char*)other._frame, 64);*/
     return *this;
 }
 
@@ -100,6 +98,7 @@ void CSMPTPFrame::_reset() {
     _actualframelen = 0;
     _writer         = _frame;
     _nbPacket       = 0;
+    _timestamp      = 0;
 }
 
 /*!
@@ -181,6 +180,8 @@ void CSMPTPFrame::addRTPPacket(CRTPFrame* pPacket) {
 
         //LOG_DUMP10BITS((const char*)hbrmp->getPayload(), 32);
         //LOG_INFO("timestanmp=%lu", hbrmp->_timestamp);
+        // Keep hbrmptimestamp from the first packet (will be overwritten)
+        _timestamp = hbrmp->getTimestamp();                     /* PktTS hook */
         _firstPacket = false;
     }
     if (_lastFc < 0) _lastFc = hbrmp->getFrameCounter();
@@ -214,6 +215,7 @@ void CSMPTPFrame::addRTPPacket(CRTPFrame* pPacket) {
 
         // Keep hbrmptimestamp from last packet
         _timestamp = hbrmp->getTimestamp();
+        _frameCounter = hbrmp->getFrameCounter();
 
         if (_firstFrame) {
             LOG_INFO("First frame initialisation --------->");
@@ -256,16 +258,22 @@ void CSMPTPFrame::addRTPPacket(CRTPFrame* pPacket) {
             case SMPTE_STANDARD::SMPTE_425MlvlA:
             case SMPTE_STANDARD::SMPTE_259M:
                 _qAvailableBuffers.push_front(VIDEO_BUFFER_0);
-                _qAvailableBuffers.push_front(AUDIO_BUFFER_0);
-                _qAvailableBuffers.push_front(ANC_BUFFER_0);
+                if (!_bVideoOnly) {
+                    _qAvailableBuffers.push_front(AUDIO_BUFFER_0);
+                    _qAvailableBuffers.push_front(ANC_BUFFER_0);
+                }
                 break;
             case SMPTE_STANDARD::SMPTE_425MlvlBDL:
                 _qAvailableBuffers.push_front(VIDEO_BUFFER_1);
-                _qAvailableBuffers.push_front(AUDIO_BUFFER_1);
-                _qAvailableBuffers.push_front(ANC_BUFFER_1);
+                if (!_bVideoOnly) {
+                    _qAvailableBuffers.push_front(AUDIO_BUFFER_1);
+                    _qAvailableBuffers.push_front(ANC_BUFFER_1);
+                }
                 _qAvailableBuffers.push_front(VIDEO_BUFFER_2);
-                _qAvailableBuffers.push_front(AUDIO_BUFFER_2);
-                _qAvailableBuffers.push_front(ANC_BUFFER_2);
+                if (!_bVideoOnly) {
+                    _qAvailableBuffers.push_front(AUDIO_BUFFER_2);
+                    _qAvailableBuffers.push_front(ANC_BUFFER_2);
+                }
                 _isDemultiplexed = false;
                 break;
             default:

@@ -43,7 +43,7 @@ namespace tools
     VMILIBRARY_API_TOOLS double          getCurrentTimeInS();
     VMILIBRARY_API_TOOLS long long       getCurrentTimeInMicroS();
     VMILIBRARY_API_TOOLS long long       getCurrentTimeInMilliS();
-    VMILIBRARY_API_TOOLS unsigned long   getUTCEpochTimeInMs();
+    VMILIBRARY_API_TOOLS long long       getUTCEpochTimeInMs();
     VMILIBRARY_API_TOOLS void            split(const string &s, char delim, vector<string> &elems);
     VMILIBRARY_API_TOOLS vector<string>  split(const string &s, char delim);
     VMILIBRARY_API_TOOLS bool            isDigits(const string &str);
@@ -65,6 +65,10 @@ namespace tools
     VMILIBRARY_API_TOOLS int             getIPAddressFromString(const char* str);
     VMILIBRARY_API_TOOLS int             convert10bitsto8bits(unsigned char* in, int in_size, unsigned char* out);
     VMILIBRARY_API_TOOLS int             convert8bitsto10bits(unsigned char* in, int in_size, unsigned char* out);
+    VMILIBRARY_API_TOOLS string          getEnv(const string & var);
+    VMILIBRARY_API_TOOLS void            convertYUV8ToRGB(unsigned char* src, int src_w, int src_h, unsigned char* dest, int factor, int depth);
+    VMILIBRARY_API_TOOLS void            convertRGBAToRGB(unsigned char* src, int src_w, int src_h, unsigned char* dest, int factor, int depth);
+
 #ifndef _WIN32
     VMILIBRARY_API_TOOLS char*           createSHMSegment(int size, int shmkey, int& shmid);
     VMILIBRARY_API_TOOLS void            detachSHMSegment(char* pData);

@@ -11,6 +11,7 @@
 #include "yuv.h"
 #include <pins/pinfactory.h>
 #include "configurable.h"
+
 using namespace std;
 
 /**********************************************************************************************
@@ -21,7 +22,7 @@ using namespace std;
 
 COutThumbSocket::COutThumbSocket(CModuleConfiguration* pMainCfg, int nIndex) : COut(pMainCfg, nIndex)
 {
-    _nType      = PIN_TYPE_TCP_THUMB;
+    _nType = PIN_TYPE_TCP_THUMB;
     PROPERTY_REGISTER_OPTIONAL("ip", _ip, "\0");
     PROPERTY_REGISTER_MANDATORY("fmt", _depth, 0);
     PROPERTY_REGISTER_OPTIONAL("w", _w, 0);
@@ -30,13 +31,13 @@ COutThumbSocket::COutThumbSocket(CModuleConfiguration* pMainCfg, int nIndex) : C
     PROPERTY_REGISTER_MANDATORY("port", _port, -1);
     PROPERTY_REGISTER_OPTIONAL("ratio", _ratio, 1);
     PROPERTY_REGISTER_OPTIONAL("interface", _interface, "");
-    _isListen   = (_ip[0]=='\0');
+    _isListen = (_ip[0] == '\0');
     _output_fps = 25;
-    _last_time  = 0.0f;
-    _frame_rate = 1.0f/(float)_fps;
+    _last_time = 0.0f;
+    _frame_rate = 1.0f / (float)_fps;
     _rgb_buffer = NULL;
-    _frame_w    = (int)((float)_w/ (float)_ratio);
-    _frame_h    = (int)((float)_h/ (float)_ratio);
+    _frame_w = (int)((float)_w / (float)_ratio);
+    _frame_h = (int)((float)_h / (float)_ratio);
 
     if (_depth < 3 || _depth>4) {
         LOG_ERROR("%s: ***ERROR*** invalid output pixel depth=%d. Must be 3 (rgb) or 4 (argb)", _name.c_str(), _depth);
@@ -51,7 +52,7 @@ COutThumbSocket::~COutThumbSocket()
     if (_rgb_buffer != NULL)
         delete[] _rgb_buffer;
 }
-
+/*
 void convertYUV8ToRGB(unsigned char* src, int src_w, int src_h, unsigned char* dest, int factor, int depth) {
     LOG("-->");
     int dst_w = src_w / factor;
@@ -83,7 +84,7 @@ void convertRGBAToRGB(unsigned char* src, int src_w, int src_h, unsigned char* d
         }
     LOG_INFO("<--");
 }
-
+*/
 int COutThumbSocket::send(CvMIFrame* frame)
 {
     if (frame == NULL) {
@@ -105,25 +106,25 @@ int COutThumbSocket::send(CvMIFrame* frame)
     //
     // Manage the connection
     //
-    if( !_tcpSock.isValid() ) {
-        if( _isListen )
+    if (!_tcpSock.isValid()) {
+        if (_isListen)
             result = _tcpSock.openSocket((char*)C_INADDR_ANY, _port, _interface);
-        else 
-            result = _tcpSock.openSocket(_ip, _port, _interface);
-        if( result != E_OK )
-            LOG("%s: can't create %s TCP socket on [%s]:%d on interface '%s'", 
-                _name.c_str(), (_isListen?"listening":"connected"), (_isListen?"NULL":_ip), _port, _interface[0]=='\0'?"<default>":_interface);
         else
-            LOG_INFO("%s: Ok to create %s TCP socket on [%s]:%d on interface '%s'", 
-                _name.c_str(), (_isListen?"listening":"connected"), (_isListen?"NULL":_ip), _port, _interface[0]=='\0'?"<default>":_interface);
+            result = _tcpSock.openSocket(_ip, _port, _interface);
+        if (result != E_OK)
+            LOG("%s: can't create %s TCP socket on [%s]:%d on interface '%s'",
+                _name.c_str(), (_isListen ? "listening" : "connected"), (_isListen ? "NULL" : _ip), _port, _interface[0] == '\0' ? "<default>" : _interface);
+        else
+            LOG_INFO("%s: Ok to create %s TCP socket on [%s]:%d on interface '%s'",
+                _name.c_str(), (_isListen ? "listening" : "connected"), (_isListen ? "NULL" : _ip), _port, _interface[0] == '\0' ? "<default>" : _interface);
     }
 
     //
     // Manage data
     //
-    if( _tcpSock.isValid() ) {
+    if (_tcpSock.isValid()) {
         double currentTime = tools::getCurrentTimeInS();
-        if( (currentTime - _last_time) > _frame_rate)
+        if ((currentTime - _last_time) > _frame_rate)
         {
             // Get Headers to identify the internal sampling format
             CFrameHeaders* headers = frame->getMediaHeaders();
@@ -159,14 +160,14 @@ int COutThumbSocket::send(CvMIFrame* frame)
                     fh.SetH(_frame_h / _ratio);
                     fh.SetMediaSize(mediasize);
                     fh.SetMediaFormat(MEDIAFORMAT::VIDEO);
-                    fh.SetSamplingFmt(_depth==3 ? SAMPLINGFMT::BGR : SAMPLINGFMT::BGRA);
+                    fh.SetSamplingFmt(_depth == 3 ? SAMPLINGFMT::BGR : SAMPLINGFMT::BGRA);
                     fh.WriteHeaders(_rgb_buffer, 0);
                 }
                 // Extract RGB thumbnail
                 if (fmt == SAMPLINGFMT::YCbCr_4_2_2 && depth == 8)
-                    convertYUV8ToRGB(frame->getMediaBuffer(), _frame_w, _frame_h, _rgb_buffer + offset, _ratio, _depth);
+                    tools::convertYUV8ToRGB(frame->getMediaBuffer(), _frame_w, _frame_h, _rgb_buffer + offset, _ratio, _depth);
                 else if (fmt == SAMPLINGFMT::RGBA)
-                    convertRGBAToRGB(frame->getMediaBuffer(), _frame_w, _frame_h, _rgb_buffer + offset, _ratio, _depth);
+                    tools::convertRGBAToRGB(frame->getMediaBuffer(), _frame_w, _frame_h, _rgb_buffer + offset, _ratio, _depth);
                 else
                     LOG_ERROR("Conversion not supported: fmt=%d %dbits to RGB(A) bytes (from %dx%d to %dx%d)", fmt, _depth, _frame_w, _frame_h, (_frame_w / _ratio), (_frame_h / _ratio));
                 // Send it
@@ -194,4 +195,4 @@ bool COutThumbSocket::isConnected()
     return _tcpSock.isValid();
 }
 
-PIN_REGISTER(COutThumbSocket,"thumbnails")
+PIN_REGISTER(COutThumbSocket, "thumbnails")

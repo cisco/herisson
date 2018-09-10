@@ -18,6 +18,7 @@
 #include "moduleconfiguration.h"
 #include "vmiframe.h"
 #include "vmistreamer.h"
+#include "packetizer.h"
 
 /**********************************************************************************************
 *
@@ -84,18 +85,13 @@ class COutRTP : public COut
     UDP *_udpSock;
     bool _isMulticast;
     int  _mtu;
-    int  _UDPPacketSize;
-    int  _RTPPacketSize;
-    int  _payloadSize;
 
     const char* _ip;
     const char* _interface;
     const char* _mcastgroup;
     int _port;
 
-    unsigned int  _seq;
-    unsigned int  _frameCount;
-    unsigned char _RTPframe[RTP_MAX_FRAME_LENGTH];
+    CRTPmmsgPacketizer _packetizer;
 public:
     COutRTP(CModuleConfiguration* pMainCfg, int nIndex);
     ~COutRTP();
@@ -184,40 +180,7 @@ public:
     bool isConnected();
 };
 
-#ifndef DO_NOT_COMPILE_X264
 
-/**********************************************************************************************
-*
-* COutx264
-*
-***********************************************************************************************/
-class COutx264 : public COut
-{
-    TCP  _tcpSock;
-    bool _isListen;
-    int _port;
-    int _w;
-    int _h;
-    int  _format;       // input format: 0=ip2vf frame, 1=raw video frame
-    bool _bWaitForNextKeyFrame;
-    bool _bQuit;
-    int            _internal_buffer_size;
-    unsigned char* _internal_buffer;
-    std::thread _th;
-    std::mutex _mutex;
-    std::condition_variable _cond_var;
-    const char* _ip;
-    const char* _interface;
-public:
-    COutx264(CModuleConfiguration* pMainCfg, int nIndex);
-    ~COutx264();
-protected:
-    void _x264_encode_process();
-public:
-    int  send(CvMIFrame* frame);
-    bool isConnected();
-};
-#endif
 
 /**********************************************************************************************
 *
@@ -240,6 +203,28 @@ class COutSMPTE: public COut
 public:
     COutSMPTE(CModuleConfiguration* pMainCfg, int nIndex);
     ~COutSMPTE();
+
+public:
+    int send(CvMIFrame* frame);
+    bool isConnected();
+};
+
+/**********************************************************************************************
+*
+* COutStorage
+*
+***********************************************************************************************/
+class COutStorage : public COut
+{
+    const char* _ip;
+    const char* _interface;
+    const char* _mcastgroup;
+    int _mtu;
+    int _port;
+
+public:
+    COutStorage(CModuleConfiguration* pMainCfg, int nIndex);
+    ~COutStorage();
 
 public:
     int send(CvMIFrame* frame);

@@ -139,7 +139,11 @@ int COutMem::send(CvMIFrame* frame)
         // Copy the buffer to the SHM
         //LOG_INFO("_shm_size=%d, size=%d to shmkey=%d", _shm_size, frame->getFrameSize(), _shm_key);
         int memoffset = _shm_wr_pt * frame->getFrameSize();
-        frame->copyFrameToMem((unsigned char*)_shm_data + memoffset, _shm_size / _shm_nbseg);
+        result = frame->copyFrameToMem((unsigned char*)_shm_data + memoffset, _shm_size / _shm_nbseg);
+        if (result != VMI_E_OK) {
+            LOG_ERROR("Invalid frame, _shm_data=0x%x, offset=%d", _shm_data, memoffset);
+            ret = E_ERROR;
+        }
 
         // Some logging stuff
         if (getLogLevel() > LOG_LEVEL_WARNING) {
@@ -149,7 +153,7 @@ int COutMem::send(CvMIFrame* frame)
         }
 
         // Notify next node via udp queue
-        if (_udpSock.isValid()) {
+        if (_udpSock.isValid() && ret!=E_ERROR) {
             // just notify the next module
             char msg[VMI_MEM_MSG_LEN];
             snprintf(msg, VMI_MEM_MSG_LEN, VMI_MEM_MSG_FORMAT, _shm_key, memoffset, _sessionId);

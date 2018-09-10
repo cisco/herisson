@@ -82,6 +82,22 @@ libvMI_frame_handle libvmi_frame_create() {
 }
 
 /**
+* \brief Return the number of free frame in g_vMIFramesArray list
+*
+* \return an integer
+*/
+int libvMI_get_free_frame_number() {
+
+    int count = 0;
+    std::unique_lock<std::mutex> lock(g_vMIFramesMutex);
+    for (std::vector< tFrameItem >::iterator it = g_vMIFramesArray.begin(); it != g_vMIFramesArray.end(); ++it) {
+        if (std::get<2>(*it))
+            count++;
+    }
+    return count;
+}
+
+/**
 * INTERNAL USE ONLY. Not exposed across the API.
 *
 * \brief return the pixel size in bit for a vMI frame
@@ -154,7 +170,7 @@ libvMI_frame_handle libvmi_frame_create_ext(struct vMIFrameInitStruct &init) {
     libvMI_frame_handle hFrame = libvmi_frame_create();
     if (hFrame != LIBVMI_INVALID_HANDLE) {
         CvMIFrame* frame = libvMI_frame_get( hFrame );
-        frame->create(&fh);
+        frame->createFrameFromHeaders(&fh);
     }
     return hFrame;
 }
@@ -314,6 +330,8 @@ void libvMI_get_parameter(VMIPARAMETER param, void* value) {
             *static_cast<int*>(value) = g_vMIMaxFramesInList; break;
         case CUR_FRAMES_IN_LIST:
             *static_cast<int*>(value) = (int)g_vMIFramesArray.size(); break;
+        case FREE_FRAMES_IN_LIST:
+            *static_cast<int*>(value) = libvMI_get_free_frame_number(); break;
         default:
             break;
         }
@@ -411,6 +429,23 @@ struct Ip2vfModulesEntry {
 std::vector<Ip2vfModulesEntry *> g_Ip2VfModules;
 
 /**
+* INTERNAL USE ONLY. Not exposed from the API.
+*
+* \brief Search and return the pointer to the vMIFrame object identified by its handle
+*
+* \param hFrame handle to the vMIFrame
+* \return the pointer, NULL if not found
+*/
+CvMIModuleController * libvMI_module_get(const libvMI_module_handle hModule) {
+
+    if (hModule < g_Ip2VfModules.size()) {
+        return g_Ip2VfModules[hModule]->module;
+    }
+    // not found
+    return NULL;
+}
+
+/**
 * INTERNAL USE ONLY. Not exposed across the API.
 *
 * \brief Create a module
@@ -422,6 +457,7 @@ std::vector<Ip2vfModulesEntry *> g_Ip2VfModules;
 * \return a handle which can be used to reference the module later
 */
 libvMI_module_handle _libvMI_create_module_int(int zmq_listen_port, libvMI_input_callback func, const char* preconfig, const void *user_data) {
+    
     libvMI_module_handle handle = (int)g_Ip2VfModules.size();
     Ip2vfModulesEntry * moduleEntry = new Ip2vfModulesEntry();
     moduleEntry->moduleConfig = preconfig;
@@ -441,11 +477,14 @@ libvMI_module_handle _libvMI_create_module_int(int zmq_listen_port, libvMI_input
 * \param user_data an opaque pointer (void*) that will be returned when callback will be called.
 * \return a handle which can be used to reference the pin later
 */
-libvMI_pin_handle _libvMI_create_input(const libvMI_module_handle module, const char* config, libvMI_input_callback func, const void *user_data) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+libvMI_pin_handle _libvMI_create_input(const libvMI_module_handle hModule, const char* config, libvMI_input_callback func, const void *user_data) {
+    
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return LIBVMI_INVALID_HANDLE;
     libvMI_pin_handle inputHandle = currentModule->getNextHandle();
     std::string configAsString(config);
-    CvMIInput * newInput = new CvMIInput(configAsString, func, inputHandle, module, user_data);
+    CvMIInput * newInput = new CvMIInput(configAsString, func, inputHandle, hModule, user_data);
     currentModule->registerInput(newInput);
     return inputHandle;
 }
@@ -460,8 +499,11 @@ libvMI_pin_handle _libvMI_create_input(const libvMI_module_handle module, const 
 * \param user_data an opaque pointer (void*) that will be returned when callback will be called.
 * \return a handle which can be used to reference the pin later
 */
-libvMI_pin_handle  _libvMI_create_output(const libvMI_module_handle module, const char* config, const void* user_data) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+libvMI_pin_handle  _libvMI_create_output(const libvMI_module_handle hModule, const char* config, const void* user_data) {
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return LIBVMI_INVALID_HANDLE;
     libvMI_pin_handle outputHandle = currentModule->getNextHandle();
     std::string configAsString(config);
     CvMIOutput * newOutput = new CvMIOutput(configAsString, outputHandle, user_data);
@@ -481,6 +523,7 @@ libvMI_pin_handle  _libvMI_create_output(const libvMI_module_handle module, cons
 * \return a handle which can be used to reference the module later
 */
 libvMI_module_handle libvMI_create_module(int zmq_listen_port, libvMI_input_callback func, const char* preconfig) {
+    
     return libvMI_create_module_ext(zmq_listen_port, func, preconfig, NULL);
 }
 
@@ -498,26 +541,27 @@ libvMI_module_handle libvMI_create_module(int zmq_listen_port, libvMI_input_call
 * \return a handle which can be used to reference the module later
 */
 libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_callback func, const char* preconfig, const void* user_data) {
+    
     LOG("-->");
 
     // create a configuration object from the "preconfig" string
     ParseConfiguration * config = _parseConfiguration(preconfig);
 
     //create a new active module controller:
-    libvMI_module_handle module = _libvMI_create_module_int(zmq_listen_port, func, config->moduleConfiguration.c_str(), user_data);
+    libvMI_module_handle hModule = _libvMI_create_module_int(zmq_listen_port, func, config->moduleConfiguration.c_str(), user_data);
 
     // Create input pins for this module, according to the configuration
     int i = 0;
     for (std::string a : config->inputConfigurations) {
-        _libvMI_create_input(module, a.c_str(), func, user_data);
+        _libvMI_create_input(hModule, a.c_str(), func, user_data);
     }
 
     // Create output pins for this module, according to the configuration
     for (std::string a : config->outputConfigurations) {
-        _libvMI_create_output(module, a.c_str(), user_data);
+        _libvMI_create_output(hModule, a.c_str(), user_data);
     }
 
-    Ip2vfModulesEntry * currentEntry = g_Ip2VfModules[module];
+    Ip2vfModulesEntry * currentEntry = g_Ip2VfModules[hModule];
     CvMIModuleController * currentModule = currentEntry->module;
     currentModule->init(currentEntry->moduleConfig, currentEntry->outputConfig);
 
@@ -525,7 +569,7 @@ libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_
     delete config;
 
     LOG("<--");
-    return module;
+    return hModule;
 }
 
 /**
@@ -534,8 +578,11 @@ libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_
 * \param module the handle of the module on which we wanted to know the count of inputs
 * \return count of inputs
 */
-int libvMI_get_input_count(const libvMI_module_handle module) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+int libvMI_get_input_count(const libvMI_module_handle hModule) {
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return VMI_E_INVALID_PARAMETER;
     return (int)currentModule->getInputs()->size();
 }
 
@@ -545,8 +592,11 @@ int libvMI_get_input_count(const libvMI_module_handle module) {
 * \param module the handle for the module on which we wanted to know the count of outputs
 * \return count of outputs
 */
-int libvMI_get_output_count(const libvMI_module_handle module) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+int libvMI_get_output_count(const libvMI_module_handle hModule) {
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return VMI_E_INVALID_PARAMETER;
     return (int)currentModule->getOutputs()->size();
 }
 
@@ -558,9 +608,12 @@ int libvMI_get_output_count(const libvMI_module_handle module) {
 * \param index the index of the pin (on [0..(pin_count-1)], pin_count is the value returned by libvMI_get_input_count
 * \return handle of input pin
 */
-libvMI_pin_handle libvMI_get_input_handle(const libvMI_module_handle module, int index) {
+libvMI_pin_handle libvMI_get_input_handle(const libvMI_module_handle hModule, int index) {
+
     libvMI_pin_handle ret = LIBVMI_INVALID_HANDLE;
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return LIBVMI_INVALID_HANDLE;
     try {
         ret = currentModule->getInputs()->at(index)->getHandle();
     }
@@ -578,10 +631,12 @@ libvMI_pin_handle libvMI_get_input_handle(const libvMI_module_handle module, int
 * \param index the index of the pin (on [0..(pin_count-1)], pin_count is the value returned by libvMI_get_output_count
 * \return handle of ouput pin
 */
-libvMI_pin_handle libvMI_get_output_handle(const libvMI_module_handle module, int index) {
+libvMI_pin_handle libvMI_get_output_handle(const libvMI_module_handle hModule, int index) {
 
     libvMI_pin_handle ret = LIBVMI_INVALID_HANDLE;
-    CvMIModuleController * currentModule = g_Ip2VfModules[module]->module;
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return LIBVMI_INVALID_HANDLE;
     try {
         ret = currentModule->getOutputs()->at(index)->getHandle();
     }
@@ -602,10 +657,12 @@ libvMI_pin_handle libvMI_get_output_handle(const libvMI_module_handle module, in
 * \param module the handle of the module which should be started
 * \return 0 when successful, -1 otherwise
 */
-int libvMI_start_module(const libvMI_module_handle module) {
+int libvMI_start_module(const libvMI_module_handle hModule) {
+
     LOG("-->");
-    Ip2vfModulesEntry * currentEntry = g_Ip2VfModules[module];
-    CvMIModuleController * currentModule = currentEntry->module;
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return -1;
     currentModule->start();
     LOG("<--");
     return 0;
@@ -621,10 +678,12 @@ int libvMI_start_module(const libvMI_module_handle module) {
 * \param module the handle of the module which should be stopped
 * \return 0 when successful, -1 otherwise
 */
-int libvMI_stop_module(const libvMI_module_handle module) {
+int libvMI_stop_module(const libvMI_module_handle hModule) {
+
     LOG("-->");
-    Ip2vfModulesEntry * currentEntry = g_Ip2VfModules[module];
-    CvMIModuleController * currentModule = currentEntry->module;
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return -1;
     currentModule->stop();
     LOG("<--");
     return 0;
@@ -639,8 +698,11 @@ int libvMI_stop_module(const libvMI_module_handle module) {
 * \param hOutput handle of the output pin
 * \return pointer to the output pin object, NULL if not found
 */
-CvMIOutput* libvMI_get_output(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[hModule]->module;
+CvMIOutput* _libvMI_get_output(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput) {
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return NULL;
     std::vector<CvMIOutput*>* outputs = currentModule->getOutputs();
     for (int i = 0; i < outputs->size(); i++) {
         try {
@@ -664,7 +726,10 @@ CvMIOutput* libvMI_get_output(const libvMI_module_handle hModule, const libvMI_p
 * \return pointer to the input pin object, NULL if not found
 */
 CvMIInput* _libvMI_get_input(const libvMI_module_handle hModule, const libvMI_pin_handle hInput) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[hModule]->module;
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return NULL;
     std::vector<CvMIInput*>* inputs = currentModule->getInputs();
     for (int i = 0; i < inputs->size(); i++) {
         try {
@@ -690,7 +755,7 @@ CvMIInput* _libvMI_get_input(const libvMI_module_handle hModule, const libvMI_pi
 void libvMI_set_output_parameter(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput, OUTPUTPARAMETER param, void* value) {
 
     try {
-        CvMIOutput* output = libvMI_get_output(hModule, hOutput);
+        CvMIOutput* output = _libvMI_get_output(hModule, hOutput);
         if (output) {
             output->setParameter(param, value);
         }
@@ -701,6 +766,66 @@ void libvMI_set_output_parameter(const libvMI_module_handle hModule, const libvM
 
     }
 }
+
+const char* libvMI_get_module_name(const libvMI_module_handle hModule) {
+
+    try {
+        CvMIModuleController * currentModule = libvMI_module_get(hModule);
+        if (currentModule) {
+            return currentModule->getName();
+        }
+    }
+    catch (...) {
+
+    }
+    return NULL;
+}
+
+const char* libvMI_get_input_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hInput) {
+
+    try {
+        CvMIInput* input = _libvMI_get_input(hModule, hInput);
+        if (input) {
+            return input->getConfigAsString();
+        }
+        else
+            LOG_ERROR("can't found pin handle #%d", hInput);
+    }
+    catch (...) {
+
+    }
+    return NULL;
+}
+
+const char* libvMI_get_output_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput) {
+
+    try {
+        CvMIOutput* output = _libvMI_get_output(hModule, hOutput);
+        if (output) {
+            return output->getConfigAsString();
+        }
+        else
+            LOG_ERROR("can't found pin handle #%d", hOutput);
+    }
+    catch (...) {
+
+    }
+    return NULL;
+}
+
+int libvMI_get_number_of_modules() {
+
+    return (int)g_Ip2VfModules.size();
+}
+
+libvMI_module_handle libvMI_get_module_by_index(int index) {
+
+    // TODO: change this. the module handle must not be the index
+    if( index<g_Ip2VfModules.size())
+        return (libvMI_module_handle)index;
+    return LIBVMI_INVALID_HANDLE;
+}
+
 
 /**
 * \brief Sends the frame across an output pin
@@ -714,8 +839,11 @@ void libvMI_set_output_parameter(const libvMI_module_handle hModule, const libvM
 * \return 0 when successful, -1 otherwise
 */
 int libvMI_send(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput, const libvMI_frame_handle hFrame) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[hModule]->module;
-    CvMIOutput * currentOutput = libvMI_get_output(hModule, hOutput);
+
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return -1;
+    CvMIOutput * currentOutput = _libvMI_get_output(hModule, hOutput);
     if (currentOutput == NULL) {
         LOG_ERROR("libip2vf_send(): can't send anything... no output configurated. exit.");
         return 0;
@@ -742,11 +870,27 @@ int libvMI_send(const libvMI_module_handle hModule, const libvMI_pin_handle hOut
 * \return 0 when successful, -1 otherwise
 */
 int libvMI_close(const libvMI_module_handle hModule) {
-    CvMIModuleController * currentModule = g_Ip2VfModules[hModule]->module;
+
     LOG("--> <--");
+    CvMIModuleController * currentModule = libvMI_module_get(hModule);
+    if (currentModule == NULL)
+        return -1;
     currentModule->close();
     delete g_Ip2VfModules[hModule];
     g_Ip2VfModules.erase(g_Ip2VfModules.begin() + hModule);
     return 0;
 }
 
+/**
+* INTERNAL USE ONLY. Not exposed across the API.
+*
+* \brief return the metrics collector corresponding to the handle
+*
+* \param module handle of interest
+* \return pointer to the metrics collector
+*/
+void*
+libvMI_get_metrics_handle(const libvMI_module_handle hModule)
+{
+	return g_Ip2VfModules[hModule]->module->getMetricsCollector();
+}

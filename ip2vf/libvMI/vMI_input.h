@@ -52,6 +52,8 @@ public:
         return &m_counter;
     }
 
+    const char* getConfigAsString() { return m_preconfig.c_str(); }
+
 public:
 
     /**

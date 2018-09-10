@@ -6,14 +6,35 @@ setlocal
 set "source_directory=%cd%"
 @echo current directory is: %source_directory%
 
+@echo checking external dependencies
+if not exist ../external/opencv/build/x64/vc14/lib/opencv_world310.lib (
+	@echo TERMINATING
+	@echo ERROR: could not find opencv 3.1 in ../external/opencv
+	@echo Please download opencv and extract it into project path
+	exit /b 666
+)
+
 echo configuring visual studio build environemnt
 :return back to build directory
 cd %source_directory%
 cd ..
 md build
 cd build
-cmake -G "Visual Studio 15 2017 Win64" ..\ip2vf\ || exit /b 666
-cmake --build . -- /maxcpucount:8 /p:Configuration=Release || cd ..\ip2vf : exit /b 666
+md windows
+cd windows
+
+:For some strange reason this is required when running from cygwin on the build server
+: the %_% variable is used to detect if running inside a cygwin ssh process
+IF DEFINED _ ECHO fixing cmake and cygwin conflicts
+IF DEFINED _ call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall" amd64
+echo on
+
+@echo printing all environment variables:
+set
+@echo ----------------------------------------------------
+
+cmake -G "Visual Studio 15 2017 Win64" ..\..\ip2vf\ || exit /b 666
+cmake --build . -- /maxcpucount:8 /p:Configuration=Release || exit /b 666
 :return to original directory where the build was run
 cd %source_directory%
 endlocal 

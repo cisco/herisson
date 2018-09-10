@@ -45,6 +45,7 @@ private:
     int     _frameCounter;
     bool    _bFrameComplete;
     bool    _bIncludeAudio;
+    bool    _bVideoOnly;
     int     _nPadding;
     unsigned int    _timestamp;
     INTERLACED_MODE _audioFmt;
@@ -98,6 +99,9 @@ public:
     /*void setInterlacedMode(bool flag) {
         _interlaced = flag;
     }*/
+    void setVideoOnlyMode(bool flag) {
+        _bVideoOnly = flag;
+    }
     int     getFrameWidth()  { return _profile.getActiveWidth();      };
     int     getFrameHeight() { return _profile.getActiveHeight();     };
     int     getFrameDepth()  { return _profile.getFrameDepth();       };

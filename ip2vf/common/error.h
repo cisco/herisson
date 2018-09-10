@@ -13,6 +13,7 @@ enum _ERRORCODE {
     // Generic errors
     VMI_E_INVALID_PARAMETER,        // In case of bad/unexpected parameter
     VMI_E_BAD_INIT,                 // In case of inialisation error
+    VMI_E_NOT_SUPPORTED,            // Not supported error
     
     // Errors relatives to memory management
     VMI_E_MEM_FAILED_TO_ALLOC,

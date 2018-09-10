@@ -8,6 +8,7 @@
 
 /* Total size of vMI headers */
 #define FRAME_HEADER_LENGTH      128
+#define FRAME_NAME_LENGTH        48
 
 #include "common.h"
 #include "libvMI.h"
@@ -58,8 +59,10 @@ private:
     SAMPLERATE  _samplerate;
     int         _packettime;
 
+    // Ext
     unsigned long long _inputtimestamp;
     unsigned long long _outputtimestamp;
+    char       _namedata[FRAME_NAME_LENGTH];
 
 public:
     CFrameHeaders() ;
@@ -149,6 +152,8 @@ public:
     void SetInputTimestamp(unsigned long long timestamp) { _inputtimestamp = timestamp; };
     unsigned long long GetOutputTimestamp() { return _outputtimestamp; };
     void SetOutputTimestamp(unsigned long long timestamp) { _outputtimestamp = timestamp; };
+    const char* GetName() { return (const char*)_namedata; };
+    void SetName(const char* name);
 };
 
 #endif //_FRAMEHEADER_H

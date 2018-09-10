@@ -28,11 +28,6 @@ COutRTP::COutRTP(CModuleConfiguration* pMainCfg, int nIndex) : COut(pMainCfg, nI
     PROPERTY_REGISTER_OPTIONAL("mtu", _mtu, 1500);
     PROPERTY_REGISTER_OPTIONAL("mcastgroup", _mcastgroup, "");
     _isMulticast       = !!_mcastgroup[0];
-    _seq            = 0;
-    _frameCount     = 0;
-    _UDPPacketSize  = _mtu - IP_HEADERS_LENGTH;
-    _RTPPacketSize  = _UDPPacketSize - UDP_HEADERS_LENGTH;
-    _payloadSize    = _RTPPacketSize - RTP_HEADERS_LENGTH;
     if( _mtu > RTP_MAX_FRAME_LENGTH ) {
         // TODO: issue
     }
@@ -77,11 +72,10 @@ int COutRTP::send(CvMIFrame* frame)
     //
     if( _udpSock->isValid() )
     {
-        int result = frame->sendToRTP(_udpSock, _mtu, _seq);
+        int result = _packetizer.send(_udpSock, (char*)frame->getFrameBuffer(), frame->getFrameSize());
         if (result != VMI_E_OK) {
             ret = -1;
         }
-        _frameCount++;
     }
 
     return ret;

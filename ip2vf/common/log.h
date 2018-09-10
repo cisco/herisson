@@ -100,6 +100,13 @@ public:
 #define ASSERT_CRITICAL(cond,message) {if(!(cond))throw criticalException(std::string(message)+ __FILE__ + LINE_STRING + __FUNCTION__ );}
 
 #ifdef _WIN32
+
+std::string GetWindowsErrorAsString(const int errorMessageID);
+
+#ifndef WARN_LAST_W32_ERROR
+    #define WARN_LAST_W32_ERROR(message) {int lastError=WSAGetLastError();LOG_WARNING((std::string(message) + GetWindowsErrorAsString(lastError)).c_str());}
+#endif
+
 //
 // Windows has a bug where if you redirect stderr it does not output everything...
 // And so, when the process is termintated from the outside, some of the output can be missing.

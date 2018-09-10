@@ -29,6 +29,7 @@ public:
     void setType(const char* type);
     void setTypeInstance(const char* typeinstance);
     void addRecord(CollectdDataCode dc, void* data);
+    void addRecordn(CollectdDataCode dc, void* data, uint16_t n);
     void resetFrame();
 private:
     std::string _plugin;

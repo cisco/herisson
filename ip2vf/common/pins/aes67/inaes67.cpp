@@ -65,7 +65,7 @@ int  CInAES67::read(CvMIFrame* frame)
 
         char rtpData[RTP_MAX_FRAME_LENGTH] = { 0 };
 
-        frame->createUninitialized(MaxAudioFrameSize + CFrameHeaders::GetHeadersLength());
+        frame->createFrameUninitialized(MaxAudioFrameSize + CFrameHeaders::GetHeadersLength());
         frame->memset(0);
         
         _headers.SetMediaSize(MaxAudioFrameSize);

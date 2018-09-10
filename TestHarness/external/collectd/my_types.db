@@ -1,0 +1,3 @@
+videofps		value:GAUGE:0:U
+videopacketgap	avg:GAUGE:0:U, std:GAUGE:0:U, min:GAUGE:0:U, max:GAUGE:0:U
+videotimestamp value:GAUGE:0:U

@@ -9,7 +9,8 @@
 CvMIOutput::CvMIOutput(const std::string &configurationString,
         libvMI_pin_handle handle, const void* user_data) :
         m_handle(handle), m_preconfig(configurationString), m_userData(
-                user_data), m_state(STATE_NOTINIT), m_inSync(false), m_syncTimestamp(0), m_syncClock(148500000)
+                user_data), m_state(STATE_NOTINIT), m_inSync(false), m_syncTimestamp(0), m_syncClock(148500000),
+        m_name(0)
 {
     m_Outframefactory = new CFrameHeaders();
 }
@@ -17,6 +18,8 @@ CvMIOutput::CvMIOutput(const std::string &configurationString,
 CvMIOutput::~CvMIOutput()
 {
     LOG("[%d] -->", m_handle);
+    if (m_name != NULL)
+        delete[] m_name;
     if (m_config != NULL)
         delete m_config;
     if (m_output != NULL)
@@ -42,6 +45,10 @@ void CvMIOutput::WriteFrameHeaders(unsigned char *buffer)
 
 int CvMIOutput::send(libvMI_frame_handle hFrame)
 {
+
+    // Before send the frame, update the name on headers
+    libvMI_set_frame_headers(hFrame, NAME_INFORMATION, m_name);
+
     libvmi_frame_addref(hFrame);
     auto newVal = std::make_pair(false, hFrame);
     m_frameQueue.push(newVal);
@@ -93,6 +100,9 @@ void CvMIOutput::_init(const std::string & name, int id)
 
     m_id = id;
 
+    m_name = new char[name.length() + 1];
+    std::strcpy(m_name, name.c_str());
+
     m_preconfig = "name=" + name + "," + m_preconfig;
     LOG_INFO("m_preconfig=%s", m_preconfig.c_str());
     m_config = new CModuleConfiguration(m_preconfig.c_str());
@@ -142,6 +152,14 @@ void CvMIOutput::start()
     }
     m_quit_process = false;
     m_th_process = std::thread( [this] { _process(); } );
+#ifndef WIN32
+    sched_param sch_params;
+    sch_params.sched_priority = 2;
+    LOG_INFO("[%d] change output thread priority to %d", m_handle, sch_params.sched_priority);
+    if (pthread_setschedparam(m_th_process.native_handle(), SCHED_FIFO, &sch_params)) {
+        LOG_ERROR("[%d] Failed to set Thread scheduling : %d", m_handle, std::strerror(errno) );
+    }
+#endif
 
     m_state = STATE_STARTED;
     LOG_INFO("[%d] <--", m_handle);
@@ -152,12 +170,13 @@ void CvMIOutput::_process()
     int count = 0;
     LOG_INFO("[%d] -->", m_handle);
 
-    //Blocking all other signals
 #ifndef WIN32
+    //Blocking all other signals
     sigset_t mask;
     sigfillset(&mask);
     pthread_sigmask(SIG_SETMASK, &mask, NULL);
 #endif
+
     if (m_output == NULL)
     {
         LOG("[%d] No input configurate. exit.", m_handle, count);
@@ -191,10 +210,10 @@ void CvMIOutput::_process()
                     unsigned int frameTimestamp = 0;
                     frame->get_header(MEDIA_TIMESTAMP, &frameTimestamp);
 
-                    // calculate real timestamp (warning, will loop)
+                    // calculate real timestamp i.e timestamp that correspond to current time (warning, will loop)
                     auto t = std::chrono::high_resolution_clock::now();
                     std::chrono::duration<double, std::milli> elapsed = t - m_syncRefTime;
-                    unsigned int curTimestamp = m_syncTimestamp + (elapsed.count()*(m_syncClock / 1000.0));
+                    unsigned int curTimestamp = m_syncTimestamp + (unsigned int)(elapsed.count()*(m_syncClock / 1000.0));
                     int timeToWait = (frameTimestamp - curTimestamp);
                     if (curTimestamp < m_oldClockTimestamp && frameTimestamp > m_oldFrameTimestamp) {
                         // Clock timestamp loop, but not yet frame timestamp... be careful
@@ -216,6 +235,8 @@ void CvMIOutput::_process()
                             // Then ensure you running VS2015 Update 3. Upgrade if not.
                             std::this_thread::sleep_for(toWaitInMs);
                     }
+                    if (framenumber % 10 == 0)
+                        LOG("[%d] send frame #%d with timestamp %lu", m_handle, framenumber, frameTimestamp);
                     m_oldClockTimestamp = curTimestamp;
                     m_oldFrameTimestamp = frameTimestamp;
                 }

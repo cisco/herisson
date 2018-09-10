@@ -5,7 +5,7 @@ set(LIBVMI_SOURCE_FILES_LIST
    "vMI_module.cpp")
    
 if (IS_GIT_REPO)
-   execute_process( COMMAND git log -10 "--pretty='%h - %an, %ar : %s \t'" OUTPUT_VARIABLE GIT_LAST_10_COMMITS )
+   execute_process( COMMAND git log -1 "--pretty='%h - %an, %ar : %s \t'" OUTPUT_VARIABLE GIT_LAST_10_COMMITS )
    execute_process( COMMAND git rev-parse --abbrev-ref HEAD OUTPUT_VARIABLE GIT_CURRENTBRANCH)
    string(REGEX REPLACE "\n" " " GIT_LAST_10_COMMITS "${GIT_LAST_10_COMMITS}")
    string(REGEX REPLACE "\n" " " GIT_CURRENTBRANCH "${GIT_CURRENTBRANCH}")
@@ -44,3 +44,4 @@ endif()
 
 target_include_directories(vMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
 target_include_directories(vMI_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
+

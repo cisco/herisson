@@ -15,6 +15,7 @@ class CvMIOutput {
     int                    m_id;
     libvMI_pin_handle      m_handle;
     std::string            m_preconfig;
+    char*                  m_name;
     CModuleConfiguration*  m_config;
     COut*                  m_output = NULL;
     CFrameHeaders*         m_Outframefactory = NULL;
@@ -52,6 +53,8 @@ public:
     inline CFrameHeaders * getFrameHeaders() {
         return m_Outframefactory;
     }
+
+    const char* getConfigAsString() { return m_preconfig.c_str(); }
 
     void setParameter(OUTPUTPARAMETER param, void* value);
     void getParameter(OUTPUTPARAMETER param, void* value);

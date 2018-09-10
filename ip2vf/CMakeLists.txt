@@ -4,16 +4,32 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 project (vMI_all)
 
+set(WANTED_PROBE_SUPPORT TRUE)
+
+
 if (UNIX AND NOT APPLE)
    set (LINUX TRUE)
 endif (UNIX AND NOT APPLE)
 
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+endif()
+
 #Detect if git repository or not
-execute_process(COMMAND "git rev-parse" RESULT_VARIABLE git_rv)
-if(git_rv STREQUAL "0")
+execute_process(COMMAND "git rev-parse" WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} RESULT_VARIABLE git_rv)
+if(NOT "${git_rv}")
+   message("This is a git repo")
    set (IS_GIT_REPO TRUE)
    add_definitions( -DIS_GIT_REPO )
 endif()
+
+if (WANTED_PROBE_SUPPORT)
+   add_definitions( -DHAVE_PROBE )
+   set(HAVE_PROBE TRUE)
+endif()
+
+
 
 #Detect OPENCV2
 find_path (OPENCV2_INCLUDE_DIRS NAMES "opencv2/opencv.hpp" PATHS "../external/opencv/build/include/")
@@ -66,6 +82,7 @@ set(COMMON_SOURCE_FILES
    "audiopacket.cpp"
    "vmiframe.cpp"
    "rtppacketizer.cpp"
+   "rtpmmsgpacketizer.cpp"
    "hbrmppacketizer.cpp"
    "pins/st2022/datasource.cpp"
    "pins/st2022/datasourcefile.cpp"
@@ -93,17 +110,22 @@ set(COMMON_SOURCE_FILES
    "pins/shmem/outmem.cpp"
    "pins/rtp/outrtp.cpp"
    "pins/st2022/outsmpte.cpp"
+   "pins/outstorage.cpp"
    "pins/outtcp.cpp"
    "pins/outthumbsocket.cpp"
    "pins/pinfactory.cpp"
    "pins/vmistreamercisco2022_6.cpp"
 
+   "pins/vmistreamerstorage.cpp"
 )
 
 foreach(f ${COMMON_SOURCE_FILES})
   list(APPEND COMMON_SOURCE_FILES_LIST "../common/${f}")
 endforeach(f)
 
+if (HAVE_PROBE)
+    list(APPEND COMMON_SOURCE_FILES_LIST "../common/pins/pktTS.cpp")
+endif()
 
 add_subdirectory(libvMI)
 add_subdirectory(vMIModules)

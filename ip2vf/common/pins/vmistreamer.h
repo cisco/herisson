@@ -13,7 +13,7 @@
 #include "rtpframe.h"
 #include "moduleconfiguration.h"
 #include <pins/st2022/smpteprofile.h>
-#include "hbrmppacketizer.h"
+#include "packetizer.h"
 
 
 /**********************************************************************************************
@@ -33,11 +33,13 @@ protected:
 
 public:
     CBasevMIStreamer(const char* ip, const char* mcastgroup, int port, PinConfiguration *pconfig, const char* ifname=NULL) {
-        _pConfig = pconfig;
-        _ip = (ip == NULL) ? NULL : STRDUP(ip);
+
+        _init       = false;
+        _pConfig    = pconfig;
+        _ip         = (ip == NULL) ? NULL : STRDUP(ip);
         _mcastgroup = (mcastgroup == NULL) ? NULL : STRDUP(mcastgroup);
-        _ifname = (ifname == NULL) ? NULL : STRDUP(ifname);
-        _port = port;
+        _ifname     = (ifname == NULL) ? NULL : STRDUP(ifname);
+        _port       = port;
     };
     virtual ~CBasevMIStreamer() {
         if (_ip) free(_ip);
@@ -87,6 +89,39 @@ protected:
 public:
     CvMIStreamerCisco2022_6(const char* ip, const char* mcastgroup, int port, PinConfiguration *pconfig, const char* ifname = NULL);
     ~CvMIStreamerCisco2022_6();
+
+public:
+    // Interface to implement
+    int  send(CvMIFrame* frame);
+    bool isConnected();
+};
+
+/**********************************************************************************************
+*
+* CvMIStreamerCisco2022_6
+*
+***********************************************************************************************/
+class CvMIStreamerStorage : public CBasevMIStreamer
+{
+protected:
+    CHBRMPPacketizer  _packetizer;
+    struct tFrameStruc
+    {
+        CSMPTPFrame* frame;
+        bool complete;
+    };
+    UDP     _udpSock;
+    bool    _isMulticast;
+    unsigned int _frameCount;
+    unsigned int _hbrmpTimestamp;
+    bool    _firstvMIFrame;
+    bool    _firstCompletedFrame;
+    struct tFrameStruc _frame;
+    int     _curFrameNb;
+
+public:
+    CvMIStreamerStorage(const char* ip, const char* mcastgroup, int port, PinConfiguration *pconfig, const char* ifname = NULL);
+    ~CvMIStreamerStorage();
 
 public:
     // Interface to implement

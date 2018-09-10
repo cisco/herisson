@@ -24,6 +24,8 @@
 #include "common.h"
 #include "tools.h"
 #include "log.h"
+#include "yuv.h"
+
 
 #include <iostream>
 #include <cctype>
@@ -109,12 +111,17 @@ long long tools::getCurrentTimeInMilliS()
     return ret;
 }
 
-unsigned long tools::getUTCEpochTimeInMs()
+long long tools::getUTCEpochTimeInMs()
 {
-    unsigned long milliseconds_since_epoch = (unsigned long)(
+    /*unsigned long milliseconds_since_epoch = (unsigned long)(
         std::chrono::system_clock::now().time_since_epoch() /
         std::chrono::milliseconds(1));
-    return milliseconds_since_epoch;
+    return milliseconds_since_epoch;*/
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+
+    auto value = now_ms.time_since_epoch();
+    return value.count();
 }
 
 
@@ -454,7 +461,7 @@ int tools::getIPAddressFromString(const char* str) {
 
 VMILIBRARY_API_TOOLS int tools::convert10bitsto8bits(unsigned char* in, int in_size, unsigned char* out) {
     try {
-        int w[4];
+        unsigned int w[4];
         while ((in_size - 5) >= 0)
         {
             w[0] = ((in[0]) << 2) + ((in[1] & 0b11000000) >> 6);
@@ -475,15 +482,75 @@ VMILIBRARY_API_TOOLS int tools::convert10bitsto8bits(unsigned char* in, int in_s
     return 0;
 }
 
-int tools::convert8bitsto10bits(unsigned char* in, int in_size, unsigned char* out) {
+VMILIBRARY_API_TOOLS int tools::convert8bitsto10bits(unsigned char* in, int in_size, unsigned char* out) {
     try {
-        for (int i = 0; i < in_size; i++)
-            tools::set10bitsWord(out, i, MAX(16, MIN(in[i], !!(i % 2) ? 235 : 240)) << 2);
+        //for (int i = 0; i < in_size; i++)
+        //    tools::set10bitsWord(out, i, MAX(16, MIN(in[i], !!(i % 2) ? 235 : 240)) << 2);
+        unsigned int w[4];
+        int i = 0;
+        while ((in_size - 4) >= 0)
+        {
+            for (int k = 0; k < 4; k++, i++) {
+                w[k] = MAX(16, MIN(in[i], !!(i % 2) ? 235 : 240)) << 2;
+            }
+            out[0] = (unsigned char) ((w[0] & 0b1111111100) >> 2);
+            out[1] = (unsigned char)(((w[0] & 0b0000000011) << 6) + ((w[1] & 0b1111110000) >> 4));
+            out[2] = (unsigned char)(((w[1] & 0b0000001111) << 4) + ((w[2] & 0b1111000000) >> 6));
+            out[3] = (unsigned char)(((w[2] & 0b0000111111) << 2) + ((w[3] & 0b1100000000) >> 8));
+            out[4] = (unsigned char)  (w[3] & 0b0011111111);
+            in_size -= 4;
+            out += 5;
+        }
     }
     catch (...) {
         LOG_ERROR("catch exception ...");
     }
     return 0;
+}
+
+VMILIBRARY_API_TOOLS string tools::getEnv(const string & var) {
+
+    const char * val = ::getenv(var.c_str());
+    if (val == 0) {
+        return "";
+    }
+    else {
+        return val;
+    }
+}
+
+VMILIBRARY_API_TOOLS void tools::convertYUV8ToRGB(unsigned char* src, int src_w, int src_h, unsigned char* dest, int factor, int depth) {
+
+    LOG("-->");
+    int dst_w = src_w / factor;
+    int dst_h = src_h / factor;
+    int nDstFullLine = dst_w * depth;
+    int nSrcFullLine = src_w * 2;
+    //LOG_INFO("factor=%d, dst_w=%d, dst_h=%d, nDstFullLine=%d, depth=%d", factor, dst_w, dst_h, nDstFullLine, depth);
+    for (int y = 0; y < dst_h; y += 1)
+        for (int x = 0; x < dst_w; x += 1) {
+            unsigned char* out = dest + y * nDstFullLine + x * depth;
+            unsigned char* in = src + y * factor * nSrcFullLine + x * factor * 2;
+            YCbCr2RGBA((char*)out, (char*)in, 1);
+        }
+    LOG("<--");
+}
+
+VMILIBRARY_API_TOOLS void tools::convertRGBAToRGB(unsigned char* src, int src_w, int src_h, unsigned char* dest, int factor, int depth) {
+
+    LOG("-->");
+    int dst_w = src_w / factor;
+    int dst_h = src_h / factor;
+    int nDstFullLine = dst_w * depth;
+    int nSrcFullLine = src_w * 4;
+    //LOG_INFO("nFactorW=%d, nFactorH=%d, nRGBFullLine=%d, nYUV8FullLine=%d", nFactorW, nFactorH, nRGBFullLine, nYUV8FullLine);
+    for (int y = 0; y < dst_h; y += 1)
+        for (int x = 0; x < dst_w; x += 1) {
+            unsigned char* out = dest + y * nDstFullLine + x * depth;
+            unsigned char* in = src + y * factor * nSrcFullLine + x * factor * 4;
+            memcpy(out, in, depth);
+        }
+    LOG("<--");
 }
 
 char* tools::createSHMSegment(int size, int shmkey, 
@@ -709,13 +776,13 @@ HANDLE& shmid, bool bForceDeleteIfUnused) {
         if (shmid == NULL) {
             shmid = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, size, shm_name);
             if (shmid == NULL) {
-                LOG_ERROR("***ERROR*** shm failed, last error=%d", GetLastError());
+                WARN_LAST_W32_ERROR("***ERROR*** CreateFileMapping failed, last error=")
                 return NULL;
             }
             // Attach the current process to the memory segment
             char* pData = static_cast<char*>(MapViewOfFile(shmid, FILE_MAP_WRITE, 0, 0, size));
             if (pData == NULL) {
-                LOG_ERROR("***ERROR*** shm failed, last error=%d", GetLastError());
+                WARN_LAST_W32_ERROR("***ERROR*** MapViewOfFile failed, last error=")
                 return NULL;
             }
             shmkey = i;

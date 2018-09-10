@@ -84,7 +84,6 @@ std::string GetWindowsErrorAsString(const int errorMessageID)
 	return message;
 }
 
-#define WARN_LAST_W32_ERROR(message) {int lastError=WSAGetLastError();LOG_WARNING((std::string(message) + GetWindowsErrorAsString(lastError)).c_str());}
 #else
 	//do nothing on linux:
 #define	WARN_LAST_W32_ERROR(message) 
@@ -189,7 +188,7 @@ listen_server(const char *hostname,
               bool        bNoBlocking=false)
 {
     struct addrinfo hints, *res, *ressave;
-    int n;
+    int n, result;
     SOCKET sockfd;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -271,9 +270,13 @@ listen_server(const char *hostname,
         return INVALID_SOCKET;
     }
 
-    listen(sockfd, LISTEN_QUEUE);
-
     freeaddrinfo(ressave);
+
+    result = listen(sockfd, LISTEN_QUEUE);
+    if (result < 0) {
+        LOG_ERROR("***ERROR*** failed to listen on port %s", service);
+        return INVALID_SOCKET;
+    }
 
     return sockfd;
 }
@@ -398,7 +401,7 @@ int TCP::openSocket(const char* addr, int port, const char* bindToDevice)
         /* 
          Open a listening socket 
          */   
-        LOG("try opening listening socket on [%s]:%s", (addr==NULL?"NULL":addr), service);
+        //LOG_INFO("try opening listening socket on [%s]:%s", (addr==NULL?"NULL":addr), service);
         if (_sock == INVALID_SOCKET) {
 #ifdef _WIN32 
             _sock = listen_server(NULL, service, AF_INET /*AF_UNSPEC*/, SOCK_STREAM, bindToDevice, true); // will create a socket listening on in6addr_any to accept either ipv4 or ipv6 connection
@@ -409,12 +412,12 @@ int TCP::openSocket(const char* addr, int port, const char* bindToDevice)
                 LOG_ERROR("***ERROR*** failed to create listening socket");
                 return E_FATAL;
             }
-            result = listen(_sock, 5);
+            /*result = listen(_sock, 5);
             if (result < 0) {
                 LOG_ERROR("***ERROR*** failed to listen on port %s", service);
                 _sock = INVALID_SOCKET;
                 return E_FATAL;
-            }
+            }*/
             LOG_INFO("Ok to listen on [%s]:%s", (addr == NULL ? "NULL" : addr), service);
             _isListening = true;
         }
@@ -422,7 +425,6 @@ int TCP::openSocket(const char* addr, int port, const char* bindToDevice)
         if( result < 0 ) {
             return E_FATAL;
         }
-        LOG("_sockClient=%d", _sockClient);
     }
     else
     {
@@ -1123,8 +1125,8 @@ int  UDP::readSocket(char *buffer, int *len)
     if( result == -1 ) {
         *len = 0;
 #ifdef _WIN32 
-		auto windowsErrorCode = WSAGetLastError();
-		LOG_ERROR("error occurred during recvfrom, error = %d %s", windowsErrorCode, GetWindowsErrorAsString(windowsErrorCode).c_str());
+        auto windowsErrorCode = WSAGetLastError();
+        LOG_ERROR("error occurred during recvfrom, error = %d %s", windowsErrorCode, GetWindowsErrorAsString(windowsErrorCode).c_str());
 #else
         LOG_ERROR("error occurred during recvfrom: '%s'", strerror(errno));
 #endif
@@ -1198,8 +1200,8 @@ int  UDP::writeSocket(char *buffer, int *len)
                     (struct sockaddr*) &_remote_addr6, size);
     if( result == -1 ) {
 #ifdef _WIN32 
-		auto windowsErrorCode = WSAGetLastError();
-		LOG_ERROR("error=%d %s", windowsErrorCode, GetWindowsErrorAsString(windowsErrorCode).c_str());
+        auto windowsErrorCode = WSAGetLastError();
+        LOG_ERROR("error=%d %s", windowsErrorCode, GetWindowsErrorAsString(windowsErrorCode).c_str());
 #else
         LOG_ERROR("error='%s'", strerror(errno));
 #endif
@@ -1213,35 +1215,37 @@ int  UDP::writeSocket(char *buffer, int *len)
     return result;
 }
 
-int  UDP::writeBatchedSocket(char **buffer, int count, int *len) {
+int  UDP::writeBatchedSocket(char **buffer, int *len, int count) {
     int result = 0;
 #ifdef _WIN32
+    // Fallback to standard "write"
+    for (int i = 0; i < count; i++) {
+        int temp_len = len[i];
+        result = writeSocket(buffer[i], &temp_len);
+    }
+    return count;
 #else
-/*    struct mmsghdr  datagrams[count];
+    struct mmsghdr  datagrams[count];
     struct iovec    iovec[count];
-    for( int i=0; i<count; i++ ) {
+    for (int i = 0; i<count; i++) {
         memset(&iovec[i], 0, sizeof(iovec[i]));
         memset(&datagrams[i], 0, sizeof(datagrams[i]));
         iovec[i].iov_base = buffer[i];
-        iovec[i].iov_len  = *len;
+        iovec[i].iov_len = len[i];
         datagrams[i].msg_hdr.msg_iov = &iovec[i];
         datagrams[i].msg_hdr.msg_iovlen = 1;
-        datagrams[i].msg_hdr.msg_name=&_addr4;
-        datagrams[i].msg_hdr.msg_namelen=sizeof( struct sockaddr_in );
+        datagrams[i].msg_hdr.msg_name = (_af == AF_INET ? (struct sockaddr*) &_remote_addr4 : (struct sockaddr*) &_remote_addr6);
+        datagrams[i].msg_hdr.msg_namelen = (_af == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
     }
     result = sendmmsg(_sock, datagrams, count, 0);
-    if( result==-1 ) {
+
+    if( result == -1 ) {
         LOG_ERROR("failed to send full messages batch, actually %d bytes on %d, error=%s", *len, result, strerror(errno));
-        exit(-1);
         return -1;
     }
-    else {
-        LOG("ok to send full messages batch, actually %d bytes on %d", *len, result);
-    }
+    
 #endif
-    return result;*/
-#endif
-    assert(0);
+    //assert(0);
     return result;
 }
 

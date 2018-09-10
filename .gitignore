@@ -49,6 +49,7 @@ ip2vf_selector
 ip2vf_compositor_bench
 
 /.project
+/ip2vf/IP2VideoFrame/.vs/
 /ip2vf/IP2VideoFrame/nbproject/private/
 /ip2vf/ProcessingNodes/nbproject/private/
 /ip2vf/SystemTest/build/
@@ -134,3 +135,7 @@ ip2vf/Documentation/libvmi/.DS_Store
 **.cproject
 **.project
 .settings
+/ip2vf/TestHarness/target/
+/ip2vf/TestHarness/nbactions.xml
+/TestHarness/target/
+/TestHarness/target/

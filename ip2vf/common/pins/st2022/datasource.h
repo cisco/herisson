@@ -14,8 +14,8 @@
 enum DataSourceType {
     TYPE_UNDEFINED = -1,  // No type
     TYPE_SOCKET = 1,   
-    TYPE_FILE = 2,   
-    TYPE_SMPTE_2022_7 = 3,   
+    TYPE_FILE,
+    TYPE_SMPTE_2022_7,
 };
 
 /**********************************************************************************************
@@ -141,6 +141,10 @@ public:
     virtual ~CRTPDataSource();
 
 public:
+#ifdef HAVE_PROBE
+    void pktTSctl(int, unsigned int);
+#endif
+
     void init(PinConfiguration *pconfig);
     int  read(char* buffer, int size);
     void waitForNextFrame();

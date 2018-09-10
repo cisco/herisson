@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>      // strcmp
 #include <iostream>     // cout
+#include <climits>      // ULONG_MAX
 #include <signal.h>
 #include <thread>
 #include <mutex>
@@ -42,6 +43,8 @@ using namespace std;
  * Some defines...
  */
 #define MSG_MAX_LEN     1024
+#define LOOP_DETECT     (ULONG_MAX/2)
+
 
 /*
  * Global variables
@@ -51,8 +54,10 @@ std::condition_variable g_var;
 std::mutex              g_mtx;
 libvMI_pin_handle       g_firstInput = -1;
 libvMI_pin_handle       g_secondInput = -1;
+libvMI_pin_handle       g_refInput = -1;
 bool                    g_init = false;
 unsigned int            g_firstTimestamp = 0;
+bool                    g_activesync = true;
 
 
 /**
@@ -100,9 +105,29 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                 libvMI_get_frame_headers(hFrame, MEDIA_FORMAT, &fmt);
                 libvMI_get_frame_headers(hFrame, MEDIA_FRAME_NB, &framenumber);
                 libvMI_get_frame_headers(hFrame, MEDIA_TIMESTAMP, &timestamp);
-                LOG("receive frame #%d on input[%d], fmt=%s, timestamp=%lu, size=%d bytes", framenumber, in, (fmt == 1 ? "video" : "audio"), timestamp, size);
+
+                if (framenumber % 100 == 0) {
+                    int curFrameInList = 0;
+                    libvMI_get_parameter(CUR_FRAMES_IN_LIST, &curFrameInList);
+                    int freeFrameInList = 0;
+                    libvMI_get_parameter(FREE_FRAMES_IN_LIST, &freeFrameInList);
+                    LOG_INFO("current free frame in list=%d/%d", freeFrameInList, curFrameInList);
+                }
+
+                if(framenumber%10==0)
+                    LOG("receive frame #%d on input[%d], fmt=%s, timestamp=%lu, size=%d bytes", framenumber, in, (fmt == 1 ? "video" : "audio"), timestamp, size);
 
                 if (g_init) {
+
+                    // Refresh ref timestamp if needed 
+                    if (in == g_refInput && framenumber % 100 == 0) {
+                        unsigned int value = timestamp;
+                        int hOutput1 = libvMI_get_output_handle(g_vMIModule, 0);
+                        int hOutput2 = libvMI_get_output_handle(g_vMIModule, 1);
+                        libvMI_set_output_parameter(g_vMIModule, hOutput1, SYNC_TIMESTAMP, &value);
+                        libvMI_set_output_parameter(g_vMIModule, hOutput2, SYNC_TIMESTAMP, &value);
+                        LOG("Refreshing ref timestamp=%lu", timestamp);
+                    }
                     // start to send frame
                     int index = (g_firstInput == in)?0:1;
                     int outputHandle = libvMI_get_output_handle(g_vMIModule, index);
@@ -112,27 +137,45 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
                     }
                 }
                 else {
-                    if (g_firstInput == -1) {
+
+                    if (g_firstInput == -1 || g_firstInput == in) {
+
                         g_firstInput = in;
                         g_firstTimestamp = timestamp;
-                        LOG_INFO("Identify first output: [%d], frame#%d, timestamp=%lu", g_firstInput, framenumber, timestamp);
+                        LOG_INFO("Identify first input [%d] with frame#%d, timestamp=%lu", g_firstInput, framenumber, timestamp);
                     }
                     else if (g_secondInput == -1 && g_firstInput != in) {
+
                         g_secondInput = in;
-                        if (g_firstTimestamp > (unsigned int)timestamp)
-                            g_firstTimestamp = timestamp;
-                        LOG_INFO("Identify second output: [%d], frame#%d, timestamp=%lu", g_secondInput, framenumber, timestamp);
-                        LOG_INFO("Init completed, using ref timestamp=%lu", g_secondInput, g_firstTimestamp);
+                        LOG_INFO("Identify second input [%d] with frame#%d, timestamp=%lu", g_secondInput, framenumber, timestamp);
+
+                        // Determinate which is our ref input pin. It will be the stream in late.
+                        if (g_firstTimestamp > (unsigned int)timestamp) {
+                            // The first stream seems in advance comparing to the secondone... except if second one has already looped
+                            g_refInput = g_secondInput;
+                            if ((g_firstTimestamp - timestamp) > LOOP_DETECT) 
+                                g_refInput = g_firstInput;
+                        }
+                        else {
+                            g_refInput = g_firstInput;
+                            if ((timestamp - g_firstTimestamp) > LOOP_DETECT)
+                                g_refInput = g_secondInput;
+                        }
+                        unsigned int refTimestamp = (g_refInput == g_firstInput) ? g_firstTimestamp : timestamp;
+                        LOG_INFO("Init completed. Reference is input [%d] with timestamp=%lu", g_refInput, refTimestamp);
+
                         // Now, configurate output pin...
-                        int nb_output = libvMI_get_output_count(g_vMIModule);
-                        int hOutput1 = libvMI_get_output_handle(g_vMIModule, 0);
-                        int hOutput2 = libvMI_get_output_handle(g_vMIModule, 1);
-                        int value = g_firstTimestamp;
-                        libvMI_set_output_parameter(g_vMIModule, hOutput1, SYNC_TIMESTAMP, &value);
-                        libvMI_set_output_parameter(g_vMIModule, hOutput2, SYNC_TIMESTAMP, &value);
-                        value = 1;
-                        libvMI_set_output_parameter(g_vMIModule, hOutput1, SYNC_ENABLED, &value);
-                        libvMI_set_output_parameter(g_vMIModule, hOutput2, SYNC_ENABLED, &value);
+                        if (g_activesync) {
+                            int nb_output = libvMI_get_output_count(g_vMIModule);
+                            int hOutput1 = libvMI_get_output_handle(g_vMIModule, 0);
+                            int hOutput2 = libvMI_get_output_handle(g_vMIModule, 1);
+                            unsigned int value = refTimestamp;
+                            libvMI_set_output_parameter(g_vMIModule, hOutput1, SYNC_TIMESTAMP, &value);
+                            libvMI_set_output_parameter(g_vMIModule, hOutput2, SYNC_TIMESTAMP, &value);
+                            value = 1;
+                            libvMI_set_output_parameter(g_vMIModule, hOutput1, SYNC_ENABLED, &value);
+                            libvMI_set_output_parameter(g_vMIModule, hOutput2, SYNC_ENABLED, &value);
+                        }
                         
                         g_init = true;
                     }
@@ -192,6 +235,10 @@ int main(int argc, char* argv[]) {
             else if (strcmp(argv[i], "-d") == 0) {
                 debug = true;
             }
+            else if (strcmp(argv[i], "-nosync") == 0) {
+                g_activesync = false;
+                LOG_INFO("Warning, SYNC MODE DISABLED");
+            }
             else if (strcmp(argv[i], "-h") == 0) {
                 std::cout << "usage: " << argv[0] << " [-h] [-v] [-p <port>] [-c <config>] [-autostart] [-s <image size>]\n";
                 std::cout << "         -h \n";
@@ -226,7 +273,7 @@ int main(int argc, char* argv[]) {
     }
     LOG_INFO("init COMPLETED");
 
-    int nbMaxFrameInList = 50;
+    int nbMaxFrameInList = 60;
     libvMI_set_parameter(MAX_FRAMES_IN_LIST, &nbMaxFrameInList);
 
     /*
