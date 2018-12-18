@@ -9,6 +9,7 @@ if (IS_GIT_REPO)
    execute_process( COMMAND git rev-parse --abbrev-ref HEAD OUTPUT_VARIABLE GIT_CURRENTBRANCH)
    string(REGEX REPLACE "\n" " " GIT_LAST_10_COMMITS "${GIT_LAST_10_COMMITS}")
    string(REGEX REPLACE "\n" " " GIT_CURRENTBRANCH "${GIT_CURRENTBRANCH}")
+   string(REGEX REPLACE "\"" "\\\\\"" GIT_LAST_10_COMMITS "${GIT_LAST_10_COMMITS}")
    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/gitversion.cpp" "const char *gitlast10commits = \"${GIT_LAST_10_COMMITS}\";\n")
    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/gitversion.cpp" "const char *gitcurrentbranch = \"${GIT_CURRENTBRANCH}\";\n")
    set(GIT_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/gitversion.cpp")
@@ -30,6 +31,12 @@ if(HAVE_PNG)
    target_include_directories(vMI_static PUBLIC "${PNG_INCLUDE_DIRS}")
 endif()
 
+if (HAVE_LIBEGEL)
+   target_link_libraries(vMI PUBLIC "${LIBEGEL_LIBRARY_PATH}" )
+   target_link_libraries(vMI_static PUBLIC "${LIBEGEL_LIBRARY_PATH}" )
+   target_include_directories(vMI PRIVATE "${LIBEGEL_INCLUDE_DIRS}")
+   target_include_directories(vMI_static PRIVATE "${LIBEGEL_INCLUDE_DIRS}")
+endif()
 if(WIN32)
    target_link_libraries(vMI PRIVATE wsock32 ws2_32)
    target_link_libraries(vMI_static PRIVATE wsock32 ws2_32)
@@ -45,3 +52,8 @@ endif()
 target_include_directories(vMI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
 target_include_directories(vMI_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
 
+# copy libvMI library and libvMI.h on ./sample folder to allow sample build easier
+add_custom_command(TARGET vMI POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vMI> ${CMAKE_CURRENT_SOURCE_DIR}/sample
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/libvMI.h ${CMAKE_CURRENT_SOURCE_DIR}/sample
+)

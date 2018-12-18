@@ -23,27 +23,21 @@ using namespace std;
 COutThumbSocket::COutThumbSocket(CModuleConfiguration* pMainCfg, int nIndex) : COut(pMainCfg, nIndex)
 {
     _nType = PIN_TYPE_TCP_THUMB;
-    PROPERTY_REGISTER_OPTIONAL("ip", _ip, "\0");
-    PROPERTY_REGISTER_MANDATORY("fmt", _depth, 0);
-    PROPERTY_REGISTER_OPTIONAL("w", _w, 0);
-    PROPERTY_REGISTER_OPTIONAL("h", _h, 0);
-    PROPERTY_REGISTER_MANDATORY("fps", _fps, 0.0);
     PROPERTY_REGISTER_MANDATORY("port", _port, -1);
-    PROPERTY_REGISTER_OPTIONAL("ratio", _ratio, 1);
+    PROPERTY_REGISTER_OPTIONAL("ip", _ip, "\0");
+    PROPERTY_REGISTER_OPTIONAL("fmt", _depth, 3);
+    PROPERTY_REGISTER_OPTIONAL("fps", _fps, 2);
+    PROPERTY_REGISTER_OPTIONAL("ratio", _ratio, 4);
     PROPERTY_REGISTER_OPTIONAL("interface", _interface, "");
     _isListen = (_ip[0] == '\0');
-    _output_fps = 25;
     _last_time = 0.0f;
     _frame_rate = 1.0f / (float)_fps;
     _rgb_buffer = NULL;
-    _frame_w = (int)((float)_w / (float)_ratio);
-    _frame_h = (int)((float)_h / (float)_ratio);
 
     if (_depth < 3 || _depth>4) {
         LOG_ERROR("%s: ***ERROR*** invalid output pixel depth=%d. Must be 3 (rgb) or 4 (argb)", _name.c_str(), _depth);
     }
 
-    LOG_INFO("%s: ratio=%d, format=%dx%d, depth=%d", _name.c_str(), _ratio, _frame_w, _frame_h, _depth);
 }
 
 COutThumbSocket::~COutThumbSocket()

@@ -66,8 +66,8 @@ public:
     virtual ~UDP();
 
     void setTimeout(const int tcp_timeout);
-	int resolveEndpoints(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
-	int configureSocket(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
+    int resolveEndpoints(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
+    int configureSocket(const char* remote_addr, const char* local_addr, int port, bool modelisten = false, const char* ifname = NULL);
     virtual int  openSocket(const char* remote_addr,const char* local_addr, int port, bool modelisten = false,const char* ifname = NULL);
     int  openRawSocket();
     virtual int  closeSocket();

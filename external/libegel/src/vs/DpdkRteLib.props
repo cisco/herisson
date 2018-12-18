@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <RTE_SDK>C:\PATH_TO_DPDK</RTE_SDK>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>$(RTE_SDK)\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</OutDir>
+    <IntDir>$(RTE_SDK)\mk\exec-env\windows\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile />
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderOutputFile />
+      <AdditionalIncludeDirectories>$(RTE_SDK)\lib\librte_eal\windows\include_override;$(RTE_SDK)\lib\librte_eal\windows\rte_override;$(RTE_SDK)\lib\librte_eal\common;$(RTE_SDK)\lib\librte_eal\common\include;$(RTE_SDK)\lib\librte_acl;$(RTE_SDK)\lib\librte_cmdline;$(RTE_SDK)\lib\librte_distributor;$(RTE_SDK)\lib\librte_ether;$(RTE_SDK)\lib\librte_hash;$(RTE_SDK)\lib\librte_ip_frag;$(RTE_SDK)\lib\librte_kvargs;$(RTE_SDK)\lib\librte_lpm;$(RTE_SDK)\lib\librte_malloc;$(RTE_SDK)\lib\librte_mempool;$(RTE_SDK)\lib\librte_mbuf;$(RTE_SDK)\lib\librte_meter;$(RTE_SDK)\lib\librte_net;$(RTE_SDK)\lib\librte_pipeline;$(RTE_SDK)\lib\librte_port;$(RTE_SDK)\lib\librte_reorder;$(RTE_SDK)\lib\librte_ring;$(RTE_SDK)\lib\librte_sched;$(RTE_SDK)\lib\librte_table;$(RTE_SDK)\lib\librte_timer;$(RTE_SDK)\lib\librte_vhost;$(RTE_SDK)\lib\librte_compat;$(RTE_SDK)\drivers\bus\pci</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(RTE_SDK)\lib\librte_eal\windows\rte_override\rte_windows.h</ForcedIncludeFiles>
+      <CLanguageStandard>gnu11</CLanguageStandard>
+      <PrecompiledHeaderCompileAs>
+      </PrecompiledHeaderCompileAs>
+      <PrecompiledHeaderOutputFileDirectory />
+      <CompileAs>Default</CompileAs>
+      <C99Support>true</C99Support>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="RTE_SDK">
+      <Value>$(RTE_SDK)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

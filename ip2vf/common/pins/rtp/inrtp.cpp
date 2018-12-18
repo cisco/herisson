@@ -25,8 +25,6 @@ CInRTP::CInRTP(CModuleConfiguration* pMainCfg, int nIndex) : CIn(pMainCfg, nInde
     LOG_INFO("%s: --> <--", _name.c_str());
     _nType        = PIN_TYPE_RTP;
     _isListen     = true;
-    _frameCounter = 0;
-    _lastSeq      = -1;
     _bStarted     = false;
     PROPERTY_REGISTER_MANDATORY("port", _port, -1);
     PROPERTY_REGISTER_OPTIONAL("mcastgroup", _mcastgroup, "");
@@ -120,13 +118,20 @@ int CInRTP::read(CvMIFrame* frame)
         }
 
         // Create a new vMI frame from the udp input connection
-        int result = frame->createFrameFromUDP(_udpSock, _nModuleId);
-        if (result != VMI_E_OK) {
-            if (result == VMI_E_FAILED_TO_RCV_SOCKET || result == VMI_E_CONNECTION_CLOSED)
-                // Not really an error...
-                _udpSock->closeSocket();
-            else
-                LOG_ERROR("errors when trying to get vMI frame...");
+        try {
+            int result = frame->createFrameFromUDP(_udpSock, _nModuleId);
+            if (result != VMI_E_OK) {
+                if (result == VMI_E_FAILED_TO_RCV_SOCKET || result == VMI_E_CONNECTION_CLOSED)
+                    // Not really an error...
+                    _udpSock->closeSocket();
+                else
+                    LOG_ERROR("errors when trying to get vMI frame...");
+                _waitForNextFrame = true;
+                return VMI_E_INVALID_FRAME;
+            }
+        }
+        catch (...) {
+            LOG_ERROR("Major error when trying to create vMI frame from RTP content... seems data is corrupted. skip this frame!");
             _waitForNextFrame = true;
             return VMI_E_INVALID_FRAME;
         }

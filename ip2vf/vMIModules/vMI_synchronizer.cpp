@@ -208,7 +208,7 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
  * @return int
  */
 int main(int argc, char* argv[]) {
-    int port = -1;
+
     bool autostart = false;
     char preconfig[MSG_MAX_LEN];
     bool use_preconfig = false;
@@ -220,9 +220,7 @@ int main(int argc, char* argv[]) {
     // Check parameters
     if (argc >= 2) {
         for (int i = 0; i < argc; i++) {
-            if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-                port = atoi(argv[i + 1]);
-            } else if (strcmp(argv[i], "-autostart") == 0) {
+            if (strcmp(argv[i], "-autostart") == 0) {
                 autostart = true;
             } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
                 STRNCPY(preconfig, argv[i + 1], MSG_MAX_LEN);
@@ -240,10 +238,9 @@ int main(int argc, char* argv[]) {
                 LOG_INFO("Warning, SYNC MODE DISABLED");
             }
             else if (strcmp(argv[i], "-h") == 0) {
-                std::cout << "usage: " << argv[0] << " [-h] [-v] [-p <port>] [-c <config>] [-autostart] [-s <image size>]\n";
+                std::cout << "usage: " << argv[0] << " [-h] [-v] [-c <config>] [-autostart] [-s <image size>]\n";
                 std::cout << "         -h \n";
                 std::cout << "         -v \n";
-                std::cout << "         -p <controler_listen_port> \n";
                 std::cout << "         -c <config> \n";
                 std::cout << "         -autostart \n";
                 return 0;
@@ -266,7 +263,7 @@ int main(int argc, char* argv[]) {
      * libvMI will wait for configuration provided by supervisor
      */
     std::unique_lock<std::mutex> lock(g_mtx);
-    g_vMIModule = libvMI_create_module(port, &libvMI_callback, (use_preconfig ? preconfig : NULL));
+    g_vMIModule = libvMI_create_module(&libvMI_callback, (use_preconfig ? preconfig : NULL));
     if (g_vMIModule == LIBVMI_INVALID_HANDLE) {
         LOG_ERROR("invalid Module id. Abort!");
         return 0;

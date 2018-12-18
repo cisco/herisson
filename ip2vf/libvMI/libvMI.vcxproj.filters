@@ -1,0 +1,355 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{98f54544-101a-44a7-a00e-4f8ced64fee9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src">
+      <UniqueIdentifier>{2cedaae1-ebdb-48e8-8fef-922c4d33f804}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include">
+      <UniqueIdentifier>{97f7cfe1-cc87-480f-a61d-c2aefb8a13a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sample">
+      <UniqueIdentifier>{9a911249-1172-4142-9a21-3cf9dc5269d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins">
+      <UniqueIdentifier>{a29568dc-7eb0-463d-8cfe-79383adcb4db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins">
+      <UniqueIdentifier>{9edaa25d-f4f2-4479-8163-5e21594fdde1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins\aes67">
+      <UniqueIdentifier>{17b9eafc-8ac0-412c-b2f9-7b11e8b0245e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins\aes67">
+      <UniqueIdentifier>{903c38b8-163e-4c82-9e0a-b083d9eb72c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins\shmem">
+      <UniqueIdentifier>{e04559ec-d711-439c-a838-00f49c289dfa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins\rtp">
+      <UniqueIdentifier>{18b7b630-cab5-42a0-b4c6-32dc526bcc32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins\rtp">
+      <UniqueIdentifier>{73aa0fc0-1a1a-4ced-8105-2286b00623a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins\shmem">
+      <UniqueIdentifier>{7199f42e-76b6-4cd8-9944-6b14cd53c79e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins\st2022">
+      <UniqueIdentifier>{236ced95-1eb0-417b-b81a-1534f889f954}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\src\pins\tr03">
+      <UniqueIdentifier>{034d47bd-77f5-4d0e-aa78-176671b27263}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins\st2022">
+      <UniqueIdentifier>{a42e10bf-8c33-4110-af17-f094d8867b25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\include\pins\tr03">
+      <UniqueIdentifier>{e4983a37-4dc8-4d5d-983b-23a65e33ccca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="sample\Makefile">
+      <Filter>sample</Filter>
+    </None>
+    <None Include="..\common.mk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libvMI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\framecounter.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\log.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\moduleconfiguration.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\tcp_basic.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\common.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\tools.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\rtpframe.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\yuv.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\audiopacket.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\frameheaders.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vMI_input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vMI_output.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vMI_module.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\queue.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\circularbuffer.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\collectdframe.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\mcastutil.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\metricscollector.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\in.h">
+      <Filter>common\include\pins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\out.h">
+      <Filter>common\include\pins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\pinfactory.h">
+      <Filter>common\include\pins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\pins.h">
+      <Filter>common\include\pins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\aes67\inaes67.h">
+      <Filter>common\include\pins\aes67</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\st2022\datasource.h">
+      <Filter>common\include\pins\st2022</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\st2022\hbrmpframe.h">
+      <Filter>common\include\pins\st2022</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\st2022\smptecrc.h">
+      <Filter>common\include\pins\st2022</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\st2022\smpteframe.h">
+      <Filter>common\include\pins\st2022</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\st2022\smpteprofile.h">
+      <Filter>common\include\pins\st2022</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\tr03\intr03.h">
+      <Filter>common\include\pins\tr03</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\tr03\tr03frame.h">
+      <Filter>common\include\pins\tr03</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\tr03\tr03frameparser.h">
+      <Filter>common\include\pins\tr03</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\vmiframe.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="libvMI_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\error.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\pins\vmistreamer.h">
+      <Filter>common\include\pins</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\packetizer.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\libegel.h">
+      <Filter>common\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="libvMI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\framecounter.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\log.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\moduleconfiguration.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\tcp_basic.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\tools.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\rtpframe.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\yuv.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\audiopacket.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\frameheaders.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="sample\sample.cpp">
+      <Filter>sample</Filter>
+    </ClCompile>
+    <ClCompile Include="vMI_input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vMI_output.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vMI_module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\circularbuffer.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\collectdframe.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\mcastutil.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\metricscollector.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\in.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\infile.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\intcp.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\out.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\outdevnull.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\outtcp.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\pinfactory.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\aes67\inaes67.cpp">
+      <Filter>common\src\pins\aes67</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\rtp\inrtp.cpp">
+      <Filter>common\src\pins\rtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\rtp\outrtp.cpp">
+      <Filter>common\src\pins\rtp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\shmem\inmem.cpp">
+      <Filter>common\src\pins\shmem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\shmem\outmem.cpp">
+      <Filter>common\src\pins\shmem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasource.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourcefile.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourceRTP.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourceSPSRTP.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\hbrmpframe.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\insmpte.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\outsmpte.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\smptecrc.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\smpteframe.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\smpteprofile.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\tr03\intr03.cpp">
+      <Filter>common\src\pins\tr03</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\tr03\outtr03.cpp">
+      <Filter>common\src\pins\tr03</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\tr03\tr03frame.cpp">
+      <Filter>common\src\pins\tr03</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\tr03\tr03frameparser.cpp">
+      <Filter>common\src\pins\tr03</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourceCachedFile.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\vmiframe.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\vmistreamercisco2022_6.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\rtppacketizer.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\hbrmppacketizer.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourceRIO.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\rtpmmsgpacketizer.cpp">
+      <Filter>common\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\vmistreamerstorage.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\st2022\datasourceDPDK.cpp">
+      <Filter>common\src\pins\st2022</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\outstorage.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\outthumbsocket.cpp">
+      <Filter>common\src\pins</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

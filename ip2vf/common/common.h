@@ -10,11 +10,17 @@
  * Some common declaration
  */
 
+/*
+ * \brief versionning
+ */
 #define VERSION_MAJOR 2
-#define VERSION_MINOR 2
-#define VERSION_PATCH 0
-#define VERSION_TAG   "vMI probe merge"
+#define VERSION_MINOR 3
+#define VERSION_PATCH 1
+#define VERSION_TAG   "DPDK Support"
 
+/*
+ * \brief Pin enumeration
+ */
 enum PinType { 
     PIN_TYPE_NONE        = -1,  // No type
     PIN_TYPE_TCP         = 1,   // (in/out) Pin allowing to receive/send video frames by IP (connected socket)
@@ -32,6 +38,9 @@ enum PinType {
     PIN_TYPE_MAX
 };
 
+/*
+* \brief Macro to 
+*/
 #define STREAMING_TYPE(a)   ( a == PIN_TYPE_TCP        || \
                               a == PIN_TYPE_FILE       || \
                               a == PIN_TYPE_RTP        || \
@@ -39,11 +48,15 @@ enum PinType {
                               a == PIN_TYPE_RAWX264    || \
                               a == PIN_TYPE_SMPTE      || \
                               a == PIN_TYPE_TR03       || \
+                              a == PIN_TYPE_AES67       || \
                               a == PIN_TYPE_STORAGE    || \
                               a == PIN_TYPE_TCP_THUMB   )
 
 #define MEMORY_TYPE(a)      ( a == PIN_TYPE_SHMEM      )
 
+/*
+* \brief Transport type enumeration
+*/
 enum TransportType {
     TRANSPORT_TYPE_NONE = 0,
     TRANSPORT_TYPE_STREAMING = 1,
@@ -63,15 +76,20 @@ enum INTERLACED_MODE {
     INTERLACED = 1
 };
 
+/*
+* \brief Prefix for external commands
+*/
 #define MSG_PREFIX_INIT     "init:"
 #define MSG_PREFIX_START    "start:"
 #define MSG_PREFIX_STOP     "stop:"
 #define MSG_PREFIX_QUIT     "quit:"
 
 
+/*
+* \brief Manage message for notification mechanism between shmem pins
+*/
 #define VMI_MEM_MSG_LEN     64
-#define VMI_MEM_MSG_FORMAT  "GO:%d:%d:%lld"
-
+#define VMI_MEM_MSG_FORMAT  "GO:key=%d:size=%d:offset=%d:sid=%lld"     /* Format = "GO:key=%SHMEM_KEY%:size=%MEM_SIZE%:offset=%MEM_OFFSET%:sid=%SESSION_ID%" */
 
 
 /*
@@ -117,6 +135,9 @@ typedef void       *HANDLE;
 //Still need to integrate Cisco x264 codec:
 #define DO_NOT_COMPILE_X264
 
+// Some constants used when try to use a pcap file as a source
+#define PCAP_FILE_HEADER_SIZE       24
+#define PCAP_PACKET_OFFSET          58
 
 
 #endif //_COMMMON_H

@@ -458,9 +458,8 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
 * \param argv[]
 * \return
 */
-int main( int argc, char** argv )
-{
-    int         port = -1;
+int main( int argc, char** argv ) {
+
     char        preconfig[MSG_MAX_LEN];
     bool        use_preconfig = false;
     LogLevel    log_level = LOG_LEVEL_INFO; // LOG_LEVEL_VERBOSE;
@@ -529,7 +528,7 @@ int main( int argc, char** argv )
     * libvMI will wait for configuration provided by supervisor
     */
     LOG_INFO("main(): Registering callbacks with libvmi");
-    g_vMIModule = libvMI_create_module(port, &libvMI_callback, (use_preconfig ? preconfig : NULL));
+    g_vMIModule = libvMI_create_module(&libvMI_callback, (use_preconfig ? preconfig : NULL));
     if (g_vMIModule == LIBVMI_INVALID_HANDLE) {
         LOG_ERROR("invalid Module id. Abort!");
         return 0;

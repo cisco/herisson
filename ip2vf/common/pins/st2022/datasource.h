@@ -15,7 +15,8 @@ enum DataSourceType {
     TYPE_UNDEFINED = -1,  // No type
     TYPE_SOCKET = 1,   
     TYPE_FILE,
-    TYPE_SMPTE_2022_7,
+	TYPE_SMPTE_2022_7,
+	TYPE_DPDK,
 };
 
 /**********************************************************************************************
@@ -151,6 +152,46 @@ public:
     void close();
 };
 
+#ifdef _USE_LIBEGEL
+/**********************************************************************************************
+*
+* CDPDKDataSource: class for network RTP source base
+*
+***********************************************************************************************/
+
+class CDPDKDataSource : public CDMUXDataSource
+{
+protected:
+    //UDP*        _udpSock;
+    int         _nbpkts;
+    int         _libegel_slot_handle;
+    void**      _libegel_pkts;
+    int         _libegel_pkts_nb;
+    int         _libegel_pkts_ptr;
+    int         _port;
+    //const char* _zmqip;
+    const char* _eal_config;
+    const char* _pci_device;
+    const char* _ip;
+    const char* _mcastgroup;
+    bool        _firstPacket;
+    bool        _init;
+    bool        _slot_init;
+
+    const char* _filename;  // For stub only 
+
+public:
+    CDPDKDataSource();
+    virtual ~CDPDKDataSource();
+
+public:
+    void init(PinConfiguration *pconfig);
+    int  read(char* buffer, int size);
+    void waitForNextFrame();
+    void close();
+};
+#endif // _USE_LIBEGEL
+
 /**********************************************************************************************
 *
 * CSPSRTPDataSource: class for network "Seamless Protection Switching" RTP source base
@@ -210,46 +251,46 @@ public:
 #include <WS2tcpip.h>
 class CRIODataSource : public CDMUXDataSource, public UDP
 {
-	typedef struct ERIO_BUF : public RIO_BUF
-	{
-		int pkt_len;
-	} ERIO_BUF;
+    typedef struct ERIO_BUF : public RIO_BUF
+    {
+        int pkt_len;
+    } ERIO_BUF;
 protected:
-	int         _port;
-	const char* _zmqip;
-	const char* _ip;
-	bool        _firstPacket;
-	GUID        _functionTableId;
-	RIO_EXTENSION_FUNCTION_TABLE _rio;
-	RIO_CQ      _completionQueue;
-	RIO_RQ      _requestQueue;
-	char*       _recvBufferPtr;
-	char*       _addrBufferPtr;
-	RIO_BUFFERID _recvBufferId;
-	RIO_BUFFERID _addrBufferId;
-	ERIO_BUF*     _addrRioBufs;
-	ERIO_BUF*     _recvRioBufs;
-	__int64      _addrRioBufIndex;
-	__int64      _recvRioBufIndex;
-	DWORD        _pendingReadPkts;
-	DWORD        _addrRioBufTotalCount;
-	DWORD        _recvRioBufTotalCount;
-	DWORD        _numReceived;
-	ULONG        _pendingRecvs;
-	int          _rioCore;
+    int         _port;
+    const char* _zmqip;
+    const char* _ip;
+    bool        _firstPacket;
+    GUID        _functionTableId;
+    RIO_EXTENSION_FUNCTION_TABLE _rio;
+    RIO_CQ      _completionQueue;
+    RIO_RQ      _requestQueue;
+    char*       _recvBufferPtr;
+    char*       _addrBufferPtr;
+    RIO_BUFFERID _recvBufferId;
+    RIO_BUFFERID _addrBufferId;
+    ERIO_BUF*     _addrRioBufs;
+    ERIO_BUF*     _recvRioBufs;
+    __int64      _addrRioBufIndex;
+    __int64      _recvRioBufIndex;
+    DWORD        _pendingReadPkts;
+    DWORD        _addrRioBufTotalCount;
+    DWORD        _recvRioBufTotalCount;
+    DWORD        _numReceived;
+    ULONG        _pendingRecvs;
+    int          _rioCore;
 public:
-	static int initWSA();
-	CRIODataSource();
-	virtual int openSocket(const char* remote_addr, const char* local_addr, int port,
-		bool modelisten, const char *ifname = NULL);
-	virtual ~CRIODataSource();
-	virtual int  readSocket(char *buffer, int *len);
+    static int initWSA();
+    CRIODataSource();
+    virtual int openSocket(const char* remote_addr, const char* local_addr, int port,
+        bool modelisten, const char *ifname = NULL);
+    virtual ~CRIODataSource();
+    virtual int  readSocket(char *buffer, int *len);
 
 public:
-	void init(PinConfiguration *pconfig);
-	int  read(char* buffer, int size);
-	void waitForNextFrame();
-	void close();
+    void init(PinConfiguration *pconfig);
+    int  read(char* buffer, int size);
+    void waitForNextFrame();
+    void close();
 };
 #endif //_WIN32
 

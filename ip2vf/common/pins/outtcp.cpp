@@ -17,19 +17,17 @@ using namespace std;
 *
 ***********************************************************************************************/
 
-COutTCP::COutTCP(CModuleConfiguration* pMainCfg, int nIndex) : COut(pMainCfg, nIndex)
-{
+COutTCP::COutTCP(CModuleConfiguration* pMainCfg, int nIndex) : COut(pMainCfg, nIndex) {
+
     _nType      = PIN_TYPE_TCP;
     PROPERTY_REGISTER_OPTIONAL("ip", _ip, "");
     PROPERTY_REGISTER_MANDATORY("port", _port, -1);
     PROPERTY_REGISTER_OPTIONAL("interface", _interface, "");
-    PROPERTY_REGISTER_OPTIONAL("fmt", _format, 1);
     _isListen   = (_ip[0]=='\0');
-    _format     = !!_format;
 }
 
-COutTCP::~COutTCP()
-{
+COutTCP::~COutTCP() {
+
     _tcpSock.closeSocket();
 }
 
@@ -71,8 +69,8 @@ int COutTCP::send(CvMIFrame* frame) {
     return ret;
 }
 
-bool COutTCP::isConnected()
-{
+bool COutTCP::isConnected() {
+
     return _tcpSock.isValid();
 }
 

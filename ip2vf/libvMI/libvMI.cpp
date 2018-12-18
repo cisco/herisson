@@ -394,11 +394,25 @@ ParseConfiguration * _parseConfiguration(const std::string config) {
 
         std::vector<std::string> params = tools::split(token, '=');
 
-        if (params.size() != 2) {
+        /*if (params.size() != 2) {
             LOG_ERROR("Invalid parameter format: '%s' is not in format '<param>=<value>'", token.c_str());
             continue;
-        }
-
+        }*/
+		if (params.size() > 2) {
+			// Accept parameter ad eal="eal -l 0-8 -n 8 --rxq=4"
+			for (int j = 2; j < (int)params.size(); j++)
+			{
+				params[1] += "=";
+				params[1] += params[j];
+			}
+			for (int j = 2; j < (int)params.size(); j++)
+				params.pop_back();
+			LOG_ERROR("params[1]='%s'", params[1].c_str());
+		}
+		else if (params.size() != 2) {
+			LOG_ERROR("Invalid parameter format: '%s' is not in format '<param>=<value>'", token.c_str());
+			continue;
+		}
 
         //this belongs to one of the pins,
         //the configuration is interleaved between parameters for input and output pins: 
@@ -450,18 +464,17 @@ CvMIModuleController * libvMI_module_get(const libvMI_module_handle hModule) {
 *
 * \brief Create a module
 *
-* \param zmq_listen_port modules are controlled by ZeroMQ, each module needs a ZeroMQ port
 * \param func a callback function for module related events. (Input related events are reported elsewhere)
 * \param preconfig A configuration string which describe configuration for the module and all inputs and outputs included on the module .
 * \param user_data an opaque pointer (void*) that will be returned when callback will be called. It correspond to the first parameter (user_data) of the callback
 * \return a handle which can be used to reference the module later
 */
-libvMI_module_handle _libvMI_create_module_int(int zmq_listen_port, libvMI_input_callback func, const char* preconfig, const void *user_data) {
+libvMI_module_handle _libvMI_create_module_int(libvMI_input_callback func, const char* preconfig, const void *user_data) {
     
     libvMI_module_handle handle = (int)g_Ip2VfModules.size();
     Ip2vfModulesEntry * moduleEntry = new Ip2vfModulesEntry();
     moduleEntry->moduleConfig = preconfig;
-    moduleEntry->module = new CvMIModuleController(zmq_listen_port, func, user_data);
+    moduleEntry->module = new CvMIModuleController(func, user_data);
     g_Ip2VfModules.push_back(moduleEntry);
     return handle;
 }
@@ -517,14 +530,13 @@ libvMI_pin_handle  _libvMI_create_output(const libvMI_module_handle hModule, con
 * Create and initialize a module with inputs and ouputs according to the configuration provided. Return the handle which allow
 * to use it afterwards. A module is responsible for ingesting data from the pipe, and propagating output.
 *
-* \param zmq_listen_port modules are controlled by ZeroMQ, each module needs a ZeroMQ port
 * \param func a callback function for module related events. (Input related events are reported elsewhere)
 * \param preconfig A configuration string which describe configuration for the module and all inputs and outputs included on the module .
 * \return a handle which can be used to reference the module later
 */
-libvMI_module_handle libvMI_create_module(int zmq_listen_port, libvMI_input_callback func, const char* preconfig) {
+libvMI_module_handle libvMI_create_module(libvMI_input_callback func, const char* preconfig) {
     
-    return libvMI_create_module_ext(zmq_listen_port, func, preconfig, NULL);
+    return libvMI_create_module_ext(func, preconfig, NULL);
 }
 
 /**
@@ -534,13 +546,12 @@ libvMI_module_handle libvMI_create_module(int zmq_listen_port, libvMI_input_call
 * to use it afterwards. A module is responsible for ingesting data from the pipe, and propagating output.
 * You can use "user_data" parameter to reference an opaque pointer that will be returned on all callback calls
 *
-* \param zmq_listen_port modules are controlled by ZeroMQ, each module needs a ZeroMQ port
 * \param func a callback function for module related events. (Input related events are reported elsewhere)
 * \param preconfig A configuration string which describe configuration for the module and all inputs and outputs included on the module .
 * \param user_data an opaque pointer (void*) that will be returned when callback will be called. It correspond to the first parameter (user_data) of the callback
 * \return a handle which can be used to reference the module later
 */
-libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_callback func, const char* preconfig, const void* user_data) {
+libvMI_module_handle libvMI_create_module_ext(libvMI_input_callback func, const char* preconfig, const void* user_data) {
     
     LOG("-->");
 
@@ -548,7 +559,7 @@ libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_
     ParseConfiguration * config = _parseConfiguration(preconfig);
 
     //create a new active module controller:
-    libvMI_module_handle hModule = _libvMI_create_module_int(zmq_listen_port, func, config->moduleConfiguration.c_str(), user_data);
+    libvMI_module_handle hModule = _libvMI_create_module_int(func, config->moduleConfiguration.c_str(), user_data);
 
     // Create input pins for this module, according to the configuration
     int i = 0;
@@ -767,6 +778,12 @@ void libvMI_set_output_parameter(const libvMI_module_handle hModule, const libvM
     }
 }
 
+/**
+* \brief Return the name of the module as it is define on configuration.
+*
+* \param hModule the handle for the module which contains the output pin
+* \return the pointer on string where are stored the module name.
+*/
 const char* libvMI_get_module_name(const libvMI_module_handle hModule) {
 
     try {
@@ -781,6 +798,13 @@ const char* libvMI_get_module_name(const libvMI_module_handle hModule) {
     return NULL;
 }
 
+/**
+* \brief Return the current configuration of the input pin identified by its handle
+*
+* \param hModule the handle for the module which contains the input pin
+* \param hInput handle of the input pin
+* \return pointer on the configuration string.
+*/
 const char* libvMI_get_input_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hInput) {
 
     try {
@@ -797,6 +821,13 @@ const char* libvMI_get_input_config_stream(const libvMI_module_handle hModule, c
     return NULL;
 }
 
+/**
+* \brief Return the current configuration of the output pin identified by its handle
+*
+* \param hModule the handle for the module which contains the output pin
+* \param hOutput handle of the output pin
+* \return pointer on the configuration string.
+*/
 const char* libvMI_get_output_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput) {
 
     try {
@@ -813,11 +844,23 @@ const char* libvMI_get_output_config_stream(const libvMI_module_handle hModule, 
     return NULL;
 }
 
+/**
+* \brief Return the number of modules managed by this library instance
+*
+* \return number of modules
+*/
 int libvMI_get_number_of_modules() {
 
     return (int)g_Ip2VfModules.size();
 }
 
+/**
+* \brief Return the handle of a module identified by it's index. Use libvMI_get_number_of_modules to
+* retreive the total number of modules on this library instance
+*
+* \param index index of module on library instance module list
+* \return handle of found module.
+*/
 libvMI_module_handle libvMI_get_module_by_index(int index) {
 
     // TODO: change this. the module handle must not be the index
@@ -878,6 +921,7 @@ int libvMI_close(const libvMI_module_handle hModule) {
     currentModule->close();
     delete g_Ip2VfModules[hModule];
     g_Ip2VfModules.erase(g_Ip2VfModules.begin() + hModule);
+	closeLog();
     return 0;
 }
 

@@ -1,0 +1,304 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_libegel|Win32">
+      <Configuration>Release_libegel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_libegel|x64">
+      <Configuration>Release_libegel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FE92B541-1527-41D2-AE97-E8AF0BA1916C}</ProjectGuid>
+    <RootNamespace>libvMI</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>../common;$(IncludePath)</IncludePath>
+    <TargetName>$(ProjectName)d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>D:\ProjetDocs\vmshared\IP2VideoFrame\VideoMaster_SDK_Windows_v6\Include;$(IncludePath)</IncludePath>
+    <TargetName>$(ProjectName)d</TargetName>
+    <OutDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <LibraryPath>D:\projetdocs\vmshared\ip2videoframe\VideoMaster_SDK_Windows_v6\Library\x64;$(CUDA_LIB_PATH);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|Win32'">
+    <IncludePath>../common;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">
+    <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IP2VFLIBRARY_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;libzmq-v120-mt-4_0_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d libvMi.h ..\WinSdkSample\libvMI\
+xcopy /y /d "$(OutDir)libvMId.lib" ..\WinSdkSample\libvMI\
+xcopy /y /d "$(OutDir)libvMId.dll" ..\WinSdkSample\libvMI\
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\common;$(ProjectDir)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WIN32;VMILIBRARY_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>IP2VFLIBRARY_EXPORTS;_WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;libzmq-v120-mt-4_0_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d libvMI.h ..\WinSdkSample\libvMI\
+xcopy /y /d "$(OutDir)libvMI.lib" ..\WinSdkSample\libvMI</Command>
+    </PostBuildEvent>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\common;$(ProjectDir)..\libvMI;$(ProjectDir)..\..\external\libegel\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>HAVE_DELTACAST;_USE_LIBEGEL;WIN32;_WIN32;VMILIBRARY_EXPORTS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\external\libegel\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libegel.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(ProjectDir)..\..\external\libegel\lib\libegel.dll" $(OutDir)
+xcopy /y /d "$(ProjectDir)..\..\external\pthreads-w32-2-9-1-release\Pre-built.2\dll\x64\pthreadVC2.dll" $(OutDir)
+</Command>
+    </PostBuildEvent>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\common.mk" />
+    <None Include="Makefile" />
+    <None Include="sample\Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\audiopacket.h" />
+    <ClInclude Include="..\common\circularbuffer.h" />
+    <ClInclude Include="..\common\collectdframe.h" />
+    <ClInclude Include="..\common\common.h" />
+    <ClInclude Include="..\common\error.h" />
+    <ClInclude Include="..\common\framecounter.h" />
+    <ClInclude Include="..\common\frameheaders.h" />
+    <ClInclude Include="..\common\libegel.h" />
+    <ClInclude Include="..\common\log.h" />
+    <ClInclude Include="..\common\mcastutil.h" />
+    <ClInclude Include="..\common\metricscollector.h" />
+    <ClInclude Include="..\common\moduleconfiguration.h" />
+    <ClInclude Include="..\common\packetizer.h" />
+    <ClInclude Include="..\common\pins\aes67\inaes67.h" />
+    <ClInclude Include="..\common\pins\in.h" />
+    <ClInclude Include="..\common\pins\out.h" />
+    <ClInclude Include="..\common\pins\pinfactory.h" />
+    <ClInclude Include="..\common\pins\pins.h" />
+    <ClInclude Include="..\common\pins\st2022\datasource.h" />
+    <ClInclude Include="..\common\pins\st2022\hbrmpframe.h" />
+    <ClInclude Include="..\common\pins\st2022\smptecrc.h" />
+    <ClInclude Include="..\common\pins\st2022\smpteframe.h" />
+    <ClInclude Include="..\common\pins\st2022\smpteprofile.h" />
+    <ClInclude Include="..\common\pins\vmistreamer.h" />
+    <ClInclude Include="..\common\pins\tr03\intr03.h" />
+    <ClInclude Include="..\common\pins\tr03\tr03frame.h" />
+    <ClInclude Include="..\common\pins\tr03\tr03frameparser.h" />
+    <ClInclude Include="..\common\queue.h" />
+    <ClInclude Include="..\common\rtpframe.h" />
+    <ClInclude Include="..\common\tcp_basic.h" />
+    <ClInclude Include="..\common\tools.h" />
+    <ClInclude Include="..\common\vmiframe.h" />
+    <ClInclude Include="..\common\yuv.h" />
+    <ClInclude Include="libvMI.h" />
+    <ClInclude Include="libvMI_int.h" />
+    <ClInclude Include="vMI_input.h" />
+    <ClInclude Include="vMI_module.h" />
+    <ClInclude Include="vMI_output.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\audiopacket.cpp" />
+    <ClCompile Include="..\common\circularbuffer.cpp" />
+    <ClCompile Include="..\common\collectdframe.cpp" />
+    <ClCompile Include="..\common\framecounter.cpp" />
+    <ClCompile Include="..\common\frameheaders.cpp" />
+    <ClCompile Include="..\common\hbrmppacketizer.cpp" />
+    <ClCompile Include="..\common\log.cpp" />
+    <ClCompile Include="..\common\mcastutil.cpp" />
+    <ClCompile Include="..\common\metricscollector.cpp" />
+    <ClCompile Include="..\common\moduleconfiguration.cpp" />
+    <ClCompile Include="..\common\pins\aes67\inaes67.cpp" />
+    <ClCompile Include="..\common\pins\in.cpp" />
+    <ClCompile Include="..\common\pins\infile.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\common\pins\intcp.cpp" />
+    <ClCompile Include="..\common\pins\out.cpp" />
+    <ClCompile Include="..\common\pins\outdevnull.cpp" />
+    <ClCompile Include="..\common\pins\outstorage.cpp" />
+    <ClCompile Include="..\common\pins\outtcp.cpp" />
+    <ClCompile Include="..\common\pins\outthumbsocket.cpp" />
+    <ClCompile Include="..\common\pins\pinfactory.cpp" />
+    <ClCompile Include="..\common\pins\rtp\inrtp.cpp" />
+    <ClCompile Include="..\common\pins\rtp\outrtp.cpp" />
+    <ClCompile Include="..\common\pins\shmem\inmem.cpp" />
+    <ClCompile Include="..\common\pins\shmem\outmem.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasource.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourceCachedFile.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourceDPDK.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourcefile.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourceRIO.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourceRTP.cpp" />
+    <ClCompile Include="..\common\pins\st2022\datasourceSPSRTP.cpp" />
+    <ClCompile Include="..\common\pins\st2022\hbrmpframe.cpp" />
+    <ClCompile Include="..\common\pins\st2022\insmpte.cpp" />
+    <ClCompile Include="..\common\pins\st2022\outsmpte.cpp" />
+    <ClCompile Include="..\common\pins\st2022\smptecrc.cpp" />
+    <ClCompile Include="..\common\pins\st2022\smpteframe.cpp" />
+    <ClCompile Include="..\common\pins\st2022\smpteprofile.cpp" />
+    <ClCompile Include="..\common\pins\tr03\intr03.cpp" />
+    <ClCompile Include="..\common\pins\tr03\outtr03.cpp" />
+    <ClCompile Include="..\common\pins\tr03\tr03frame.cpp" />
+    <ClCompile Include="..\common\pins\tr03\tr03frameparser.cpp" />
+    <ClCompile Include="..\common\pins\vmistreamercisco2022_6.cpp" />
+    <ClCompile Include="..\common\pins\vmistreamerstorage.cpp" />
+    <ClCompile Include="..\common\rtpframe.cpp" />
+    <ClCompile Include="..\common\rtpmmsgpacketizer.cpp" />
+    <ClCompile Include="..\common\rtppacketizer.cpp" />
+    <ClCompile Include="..\common\tcp_basic.cpp" />
+    <ClCompile Include="..\common\tools.cpp" />
+    <ClCompile Include="..\common\vmiframe.cpp" />
+    <ClCompile Include="..\common\yuv.cpp" />
+    <ClCompile Include="libvMI.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_libegel|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="sample\sample.cpp" />
+    <ClCompile Include="vMI_input.cpp" />
+    <ClCompile Include="vMI_module.cpp" />
+    <ClCompile Include="vMI_output.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

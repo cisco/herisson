@@ -43,6 +43,7 @@ int COutStorage::send(CvMIFrame* frame) {
 
     int result = VMI_E_OK;
     LOG("%s: --> <-- ", _name.c_str());
+    // TODO
 
     return result;
 }

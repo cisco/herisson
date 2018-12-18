@@ -24,16 +24,18 @@
 *
 * COut
 *
+* Base class for all vMI output pin
+*
 ***********************************************************************************************/
 class COut {
 protected:
-    PinType     _nType;
-    std::string _name;
-    int         _nIndex;
-    int         _nModuleId;
-    bool        _firstFrame;
-    MEDIAFORMAT _mediaformat;
-    PinConfiguration* _pConfig;
+    PinType     _nType;         /* Type of the pin */
+    std::string _name;          /* Name of the pin. Basically, it's based on "%MODULE_NAME%[%index%]" */
+    int         _nIndex;        /* Index of the pin on the list of module pins */
+    int         _nModuleId;     /* Id of the module that own the pin */
+    bool        _firstFrame;    /* Flag to indicate that first frame is under sending */
+    MEDIAFORMAT _mediaformat;   /* Media format for the output stream */
+    PinConfiguration* _pConfig; /* Pin configuration */
 
 public:
     COut(CModuleConfiguration* pMainCfg, int nIndex);
@@ -47,7 +49,9 @@ public:
     TransportType     getTransportType();
 
 public:
-    // Interface to implement
+    /* 
+     * Interface to implement
+     */
     virtual int  send(CvMIFrame* frame) = 0;
     virtual bool isConnected() = 0;
 };
@@ -56,22 +60,22 @@ public:
 *
 * COutTCP
 *
+* vMI output pin to propagate a vMI stream with a TCP connection
+*
 ***********************************************************************************************/
 class COutTCP : public COut
 {
-    TCP  _tcpSock;
-    bool _isListen;
+    TCP  _tcpSock;          /* TCP object used to send vMI frames */
+    bool _isListen;         /* listen flag */
     int  _flags;
-    int  _format;       // input format: 0=ip2vf frame, 1=raw video frame
-
-    int  _port;
-    const char* _ip;
-    const char* _interface;
+    int  _port;             /* port to use (client or server socket) */
+    const char* _ip;        /* ip (for client socket) */
+    const char* _interface; /* ip of the network interface for server socket */
 public:
     COutTCP(CModuleConfiguration* pMainCfg, int nIndex);
     ~COutTCP();
 public:
-    int  send(CvMIFrame* frame);
+    int  send(CvMIFrame* frame);    
     bool isConnected();
 };
 
@@ -79,19 +83,22 @@ public:
 *
 * COutRTP
 *
+* vMI output pin to propagate a vMI stream with RTP. Typcally used internally to a 
+* pipeline to transport vMI frame between two modules not located on same compute node.
+*
 ***********************************************************************************************/
 class COutRTP : public COut
 {
-    UDP *_udpSock;
+    UDP *_udpSock;          /* UDP socket to use to send data */
     bool _isMulticast;
     int  _mtu;
 
-    const char* _ip;
-    const char* _interface;
-    const char* _mcastgroup;
-    int _port;
+    const char* _ip;        /* ip (for client socket) */
+    const char* _interface; /* ip of the network interface to rcv data (for server socket) */
+    const char* _mcastgroup;/* mcast group to join for multicast stream */
+    int _port;              /* port to use (client or server socket)*/
 
-    CRTPmmsgPacketizer _packetizer;
+    CRTPPacketizer _packetizer; /* kind of packetiser to use */
 public:
     COutRTP(CModuleConfiguration* pMainCfg, int nIndex);
     ~COutRTP();
@@ -109,12 +116,12 @@ class COutMem : public COut
 {
 public:
 #ifndef _WIN32
-    int    _shm_id;         /* return value from shmget()    */
+    int    _shm_id;         /* shared memory identifier  */ 
 #else
-    HANDLE _shm_id;
+    HANDLE _shm_id;         /* shared memory identifier  */ 
 #endif
-    int    _shm_key;        /* key to be passed to shmget()  */
-    int    _shm_size;       /* size to be passed to shmget() */
+    int    _shm_key;        /* key of the shared memory to get  */ 
+    int    _shm_size;       /* size of shared memory in bytes */
     char*  _shm_data;
     int    _shm_nbseg;
     int    _shm_wr_pt;
@@ -156,7 +163,6 @@ class COutThumbSocket : public COut, public CFrameCounter
 {
     TCP    _tcpSock;
     bool   _isListen;
-    int    _output_fps;
     double _last_time;
     float  _frame_rate;
     unsigned char* _rgb_buffer;
@@ -167,11 +173,9 @@ class COutThumbSocket : public COut, public CFrameCounter
     const char* _ip;
     const char* _interface;
     int _port;
-    int _w;
-    int _h;
     int _depth;
     int _ratio;
-    float _fps;
+    int _fps;
 public:
     COutThumbSocket(CModuleConfiguration* pMainCfg, int nIndex);
     ~COutThumbSocket();

@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
     * libvMI will wait for configuration provided by supervisor
     */
     std::unique_lock<std::mutex> lock(g_mtx);
-    g_vMIModule = libvMI_create_module_ext(port, &libvMI_callback, preconfig, (const void*) g_userData);
+    g_vMIModule = libvMI_create_module_ext(&libvMI_callback, preconfig, (const void*) g_userData);
     if (g_vMIModule == LIBVMI_INVALID_HANDLE) {
         LOG_ERROR("invalid Module id. Abort!");
         return 0;

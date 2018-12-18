@@ -82,7 +82,13 @@ int CvMIFrame::releaseRef() {
 
 int CvMIFrame::_init_buffer(int framesize) {
 
+    if (framesize <= 0) {
+        LOG_ERROR("Invalid size of %d bytes", framesize);
+        return VMI_E_MEM_FAILED_TO_ALLOC;
+    }
+
     if (_frame_buffer == NULL || framesize > _buffer_size) {
+
         unsigned char* old_frame_buffer = NULL;
         if (_frame_buffer != NULL)
             old_frame_buffer = _frame_buffer;
@@ -297,6 +303,11 @@ int CvMIFrame::createFrameFromUDP(UDP* sock, int moduleId) {
         LOG_INFO("the connection has been gracefully closed");
         return VMI_E_CONNECTION_CLOSED;
     }
+    else if (result < RTP_HEADERS_LENGTH) {
+        LOG_INFO("Serious issue... read %d bytes, then less that RTP_HEADERS_LENGTH. Corrupted data?");
+        return VMI_E_INVALID_FRAME;
+    }
+
     // copy RTP payload on frame buffer
     int payloadLen = len - RTP_HEADERS_LENGTH;
     memcpy((char*)_frame_buffer, packet + RTP_HEADERS_LENGTH, payloadLen);
@@ -313,7 +324,7 @@ int CvMIFrame::createFrameFromUDP(UDP* sock, int moduleId) {
     CRTPFrame frame((unsigned char*)packet, len);
     int lastSeq = frame._seq;
 
-    // verify the size of media content
+    // verify the size of media content, buffer will growth if needed
     int media_size = _fh.GetMediaSize();
     int frame_size = media_size + CFrameHeaders::GetHeadersLength();
     result = _init_buffer(frame_size);
@@ -329,7 +340,7 @@ int CvMIFrame::createFrameFromUDP(UDP* sock, int moduleId) {
     bool bEndOfFrame = false;
 
     sock->pktTSctl(1, _fh.GetMediaTimestamp());                 /* PktTS hook */
-    while ( !bEndOfFrame ) {
+    while ( !bEndOfFrame && remainingLen>0) {
 
         // First, keep the full RTP frame from the current UDP packet
         len = RTP_MAX_FRAME_LENGTH;
@@ -341,6 +352,10 @@ int CvMIFrame::createFrameFromUDP(UDP* sock, int moduleId) {
         else if (result == 0) {
             LOG_INFO("the connection has been gracefully closed");
             return VMI_E_CONNECTION_CLOSED;
+        }
+        else if (result <= RTP_HEADERS_LENGTH) {
+            LOG_INFO("Serious issue... read %d bytes, then less than RTP_HEADERS_LENGTH. Corrupted data?");
+            return VMI_E_INVALID_FRAME;
         }
 
         CRTPFrame frame((unsigned char*)packet, len);

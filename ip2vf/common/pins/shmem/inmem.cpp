@@ -64,41 +64,18 @@ CInMem::~CInMem()
         tools::detachSHMSegment(_shm_data);
 }
 
-void CInMem::_checkMemorySegment(int shmkey, long long sessionId) {
+void CInMem::_checkMemorySegment(int shmkey, int shmsize, long long sessionId) {
 
-    if (_shm_data == NULL || shmkey != _shm_key || sessionId != _sessionId) {
+    if (_shm_data == NULL || shmkey != _shm_key || shmsize != _shm_size || sessionId != _sessionId) {
 
-        LOG_INFO("Open memory segment with key=%d", shmkey);
         // Delete any previous seg memory segment
         if (_shm_data != NULL)
             tools::detachSHMSegment(_shm_data);
 
-        // First, open the segment just enough to read headers. Goal was to retreive the complete frame size...
+        // Then open the new segment. Size corresponds to size that previous shmem pin tell us.
+        LOG_INFO("Open memory segment with key=%d", shmkey);
         _shm_key = shmkey;
-        _shm_size = CFrameHeaders::GetHeadersLength();
-        _shm_data = tools::getSHMSegment(_shm_size, _shm_key, _shm_id);
-        if (_shm_data == NULL) {
-            LOG_ERROR("%s: ***ERROR*** failed to create shared memory segment of size %d. Aborting!!.", _name.c_str(), _shm_size);
-            return;
-        }
-        CFrameHeaders headers;
-        int result = headers.ReadHeaders((unsigned char*)_shm_data);
-        if (result != VMI_E_OK) {
-            LOG_ERROR("%s: ***ERROR*** failed to read headers", _name.c_str());
-            return;
-        }
-#ifdef _WIN32
-        _shm_size = (headers.GetMediaSize() + CFrameHeaders::GetHeadersLength());
-        LOG_INFO("Size of shmem seg=%d, size of a frame=%d", _shm_size, (headers.GetMediaSize() + CFrameHeaders::GetHeadersLength()));
-#else
-        LOG_INFO("Size of shmem seg=%d, size of a frame=%d", tools::getSHMSegmentSize(_shm_id), (headers.GetMediaSize() + CFrameHeaders::GetHeadersLength()));
-        if (tools::getSHMSegmentSize(_shm_id) < (headers.GetMediaSize() + CFrameHeaders::GetHeadersLength())) {
-            LOG_ERROR("%s: ***ERROR*** shmem size is too short for a frame...", _name.c_str());
-            return;
-        }
-        _shm_size = tools::getSHMSegmentSize(_shm_id);
-#endif
-        tools::detachSHMSegment(_shm_data);
+        _shm_size = shmsize;
         _shm_data = tools::getSHMSegment(_shm_size, _shm_key, _shm_id);
         if (_shm_data == NULL) {
             LOG_ERROR("%s: ***ERROR*** failed to create shared memory segment of size %d. Aborting!!.", _name.c_str(), _shm_size);
@@ -108,7 +85,6 @@ void CInMem::_checkMemorySegment(int shmkey, long long sessionId) {
         LOG_INFO("Opening of memory segment with key=%d and size=%d completed", _shm_key, _shm_size);
     }
 }
-
 
 int CInMem::read(CvMIFrame* frame)
 {
@@ -149,13 +125,13 @@ int CInMem::read(CvMIFrame* frame)
         int num = _udpSock.readSocket(msg, &len);        //int num = zmq_recv(_zmq_receiver, msg, 32, 0);
         if (num > 0)
         {
-            int shmkey = 0, memoffset = 0;
+            int shmkey = 0, memsize = 0, memoffset = 0;
             long long sessionId = 0LL;
             msg[num] = '\0';
             LOG("%s: recv '%d' bytes, msg='%s'", _name.c_str(), num, msg);
-            sscanf(msg, VMI_MEM_MSG_FORMAT, &shmkey, &memoffset, &sessionId);
+            sscanf(msg, VMI_MEM_MSG_FORMAT, &shmkey, &memsize, &memoffset, &sessionId);
 
-            _checkMemorySegment(shmkey, sessionId);
+            _checkMemorySegment(shmkey, memsize, sessionId);
             if (_shm_data != NULL && frame == NULL) {
                 CFrameHeaders headers;
                 result = headers.ReadHeaders((unsigned char*)_shm_data + memoffset);

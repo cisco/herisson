@@ -198,51 +198,56 @@ void CvMIOutput::_process()
                 LOG_ERROR("Invalid handle...");
                 break;
             }
-            CvMIFrame* frame = libvMI_frame_get(res.second);
-            if (frame) {
-                if (m_inSync) {
+            try {
+                CvMIFrame* frame = libvMI_frame_get(res.second);
+                if (frame) {
+                    if (m_inSync) {
 
-                    // keep frame number
-                    int framenumber = 0;
-                    frame->get_header(MEDIA_FRAME_NB, &framenumber);
+                        // keep frame number
+                        int framenumber = 0;
+                        frame->get_header(MEDIA_FRAME_NB, &framenumber);
 
-                    // Keep frame timestamp
-                    unsigned int frameTimestamp = 0;
-                    frame->get_header(MEDIA_TIMESTAMP, &frameTimestamp);
+                        // Keep frame timestamp
+                        unsigned int frameTimestamp = 0;
+                        frame->get_header(MEDIA_TIMESTAMP, &frameTimestamp);
 
-                    // calculate real timestamp i.e timestamp that correspond to current time (warning, will loop)
-                    auto t = std::chrono::high_resolution_clock::now();
-                    std::chrono::duration<double, std::milli> elapsed = t - m_syncRefTime;
-                    unsigned int curTimestamp = m_syncTimestamp + (unsigned int)(elapsed.count()*(m_syncClock / 1000.0));
-                    int timeToWait = (frameTimestamp - curTimestamp);
-                    if (curTimestamp < m_oldClockTimestamp && frameTimestamp > m_oldFrameTimestamp) {
-                        // Clock timestamp loop, but not yet frame timestamp... be careful
-                        int oldTimeToWait = timeToWait;
-                        timeToWait = ULONG_MAX - frameTimestamp + curTimestamp;
-                        LOG_INFO("[%d] frame#%d, old timeToWait=%d, new=%d", m_handle, framenumber, oldTimeToWait, timeToWait);
-                    }
-                    //LOG_INFO("[%d] frame#%d, ref=%lu, cur=%lu, frame=%lu", m_handle, framenumber, m_syncTimestamp, curTimestamp, frameTimestamp);
-
-                    if (timeToWait > 0) {
-                        std::chrono::duration<double, std::milli> toWaitInMs (1000.0 * timeToWait / m_syncClock);
-                        //LOG_INFO("[%d] must wait %lu (%lums)", m_handle, toWait, (unsigned int)toWaitInMs.count());
-                        if (toWaitInMs.count() > 2000.0) {
-                            LOG_INFO("[%d] frame#%d, ref=%lu, cur=%lu, frame=%lu", m_handle, framenumber, m_syncTimestamp, curTimestamp, frameTimestamp);
-                            LOG_ERROR("[%d] frame#%d, must wait %d (%lums)", m_handle, framenumber, timeToWait, (unsigned int)toWaitInMs.count());
+                        // calculate real timestamp i.e timestamp that correspond to current time (warning, will loop)
+                        auto t = std::chrono::high_resolution_clock::now();
+                        std::chrono::duration<double, std::milli> elapsed = t - m_syncRefTime;
+                        unsigned int curTimestamp = m_syncTimestamp + (unsigned int)(elapsed.count()*(m_syncClock / 1000.0));
+                        int timeToWait = (frameTimestamp - curTimestamp);
+                        if (curTimestamp < m_oldClockTimestamp && frameTimestamp > m_oldFrameTimestamp) {
+                            // Clock timestamp loop, but not yet frame timestamp... be careful
+                            int oldTimeToWait = timeToWait;
+                            timeToWait = ULONG_MAX - frameTimestamp + curTimestamp;
+                            LOG_INFO("[%d] frame#%d, old timeToWait=%d, new=%d", m_handle, framenumber, oldTimeToWait, timeToWait);
                         }
-                        else 
-                            // Note: in case of compile error: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\chrono(769): error C2679: binary '+=': no operator found which takes a right-hand operand of type 'const std::chrono::duration<double,std::milli>' (or there is no acceptable conversion) (compiling source file vMI_output.cpp)
-                            // Then ensure you running VS2015 Update 3. Upgrade if not.
-                            std::this_thread::sleep_for(toWaitInMs);
+                        //LOG_INFO("[%d] frame#%d, ref=%lu, cur=%lu, frame=%lu", m_handle, framenumber, m_syncTimestamp, curTimestamp, frameTimestamp);
+
+                        if (timeToWait > 0) {
+                            std::chrono::duration<double, std::milli> toWaitInMs (1000.0 * timeToWait / m_syncClock);
+                            //LOG_INFO("[%d] must wait %lu (%lums)", m_handle, toWait, (unsigned int)toWaitInMs.count());
+                            if (toWaitInMs.count() > 2000.0) {
+                                LOG_INFO("[%d] frame#%d, ref=%lu, cur=%lu, frame=%lu", m_handle, framenumber, m_syncTimestamp, curTimestamp, frameTimestamp);
+                                LOG_ERROR("[%d] frame#%d, must wait %d (%lums)", m_handle, framenumber, timeToWait, (unsigned int)toWaitInMs.count());
+                            }
+                            else 
+                                // Note: in case of compile error: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include\chrono(769): error C2679: binary '+=': no operator found which takes a right-hand operand of type 'const std::chrono::duration<double,std::milli>' (or there is no acceptable conversion) (compiling source file vMI_output.cpp)
+                                // Then ensure you running VS2015 Update 3. Upgrade if not.
+                                std::this_thread::sleep_for(toWaitInMs);
+                        }
+                        if (framenumber % 10 == 0)
+                            LOG("[%d] send frame #%d with timestamp %lu", m_handle, framenumber, frameTimestamp);
+                        m_oldClockTimestamp = curTimestamp;
+                        m_oldFrameTimestamp = frameTimestamp;
                     }
-                    if (framenumber % 10 == 0)
-                        LOG("[%d] send frame #%d with timestamp %lu", m_handle, framenumber, frameTimestamp);
-                    m_oldClockTimestamp = curTimestamp;
-                    m_oldFrameTimestamp = frameTimestamp;
+                    LOG("[%d] send frame [%d] frame ptr=0x%x, queue size=%d", m_handle, res.second, frame, m_frameQueue.size());
+                    m_output->send(frame);
+                    libvmi_frame_release(res.second);
                 }
-                LOG("[%d] send frame [%d] frame ptr=0x%x, queue size=%d", m_handle, res.second, frame, m_frameQueue.size());
-                m_output->send(frame);
-                libvmi_frame_release(res.second);
+                }
+            catch (...) {
+                LOG_ERROR("Catch exception on process() loop...");
             }
         }
 

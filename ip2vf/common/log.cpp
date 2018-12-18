@@ -4,17 +4,110 @@
 #include <string.h>
 #include <ctype.h>              // isalnum
 
+#define _EXTERNAL_LOG_SUPPORT
+#ifdef _EXTERNAL_LOG_SUPPORT
+#include "logreport.h"
+const char* g_module_not_defined = "<not_defined>";
+#endif // _EXTERNAL_LOG_SUPPORT
+
+#define _SUPPORT_COLOR
+
 #ifdef _WIN32
 
-#define DISPFORMAT_START    ""
-#define DISPFORMAT_RESET    ""
+#include <wchar.h>
+#include <windows.h>
+#include <process.h>
+#define DISPFORMAT_START    "\x1b[%dm"
+#define DISPFORMAT_RESET    "\x1b[0m"
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING  0x0004
+#define DISABLE_NEWLINE_AUTO_RETURN         0x0008
+#define ENABLE_VIRTUAL_TERMINAL_INPUT       0x0200
 #define VSNPRINTF(a,...)   vsnprintf(a, (sizeof(a)/sizeof(char)), __VA_ARGS__)
 #define SNPRINTF(a,...)    _snprintf_s(a, (sizeof(a)/sizeof(char)), _TRUNCATE, __VA_ARGS__)
 #define STRCPY(a,b)         strcpy_s(a, (sizeof(a)/sizeof(char)), b)
 #define STRCAT(a,b)         strcat_s(a, (sizeof(a)/sizeof(char)), b)
 #define GETPID              _getpid()
 #define GETTID              0           //  pthread_self()
-#include <process.h>
+
+DWORD dwOriginalOutMode = 0;
+DWORD dwOriginalInMode  = 0;
+DWORD bVirtTermProcessingFlag = false;
+int enableVirtualTerminalProcessing()
+{
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+	if (hIn == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+
+	DWORD dwOriginalOutMode = 0;
+	DWORD dwOriginalInMode = 0;
+	if (!GetConsoleMode(hOut, &dwOriginalOutMode))
+	{
+		return false;
+	}
+	if (!GetConsoleMode(hIn, &dwOriginalInMode))
+	{
+		return false;
+	}
+
+	DWORD dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+	DWORD dwRequestedInModes = ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+	DWORD dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+	if (!SetConsoleMode(hOut, dwOutMode))
+	{
+		// we failed to set both modes, try to step down mode gracefully.
+		dwRequestedOutModes = ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+		dwOutMode = dwOriginalOutMode | dwRequestedOutModes;
+		if (!SetConsoleMode(hOut, dwOutMode))
+		{
+			// Failed to set any VT mode, can't do anything here.
+			return -1;
+		}
+	}
+
+	DWORD dwInMode = dwOriginalInMode | ENABLE_VIRTUAL_TERMINAL_INPUT;
+	if (!SetConsoleMode(hIn, dwInMode))
+	{
+		// Failed to set VT input mode, can't do anything here.
+		return -1;
+	}
+	bVirtTermProcessingFlag = true;
+	return 0;
+}
+int revertToDefaultConsoleMode() {
+	if (!bVirtTermProcessingFlag)
+		return 0;
+	// Set output mode to handle virtual terminal sequences
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+	if (hIn == INVALID_HANDLE_VALUE)
+	{
+		return false;
+	}
+	if (!SetConsoleMode(hOut, dwOriginalOutMode))
+	{
+		// Failed to set any VT mode, can't do anything here.
+		return -1;
+	}
+	if (!SetConsoleMode(hIn, dwOriginalInMode))
+	{
+		// Failed to set VT input mode, can't do anything here.
+		return -1;
+	}
+	return 0;
+}
 
 #else   // _WIN32
 
@@ -37,13 +130,23 @@
 #define MIN(a, b)       (a<b?a:b)
 #endif
 
+
 LogLevel g_logLevel = LOG_LEVEL_VERBOSE;
 void setLogLevel(LogLevel level)
 {
-    g_logLevel = level;
+#ifdef _WIN32
+	enableVirtualTerminalProcessing();
+#endif	//_WIN32
+	g_logLevel = level;
 }
 LogLevel getLogLevel() {
     return g_logLevel;
+}
+
+void closeLog() {
+#ifdef _WIN32
+	revertToDefaultConsoleMode();
+#endif	//_WIN32
 }
 
 void platform_log(const char* message, ...)
@@ -86,6 +189,13 @@ void internal_LOG_INFO(std::string method, const char* message, ...)
     VSNPRINTF(dest, message, argptr);
     va_end(argptr);
     platform_log("%5x:%5x: -i- %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
+
+/*#ifdef _EXTERNAL_LOG_SUPPORT
+    char dest2[1500];
+    const char* module_name = (libvMI_get_module_name(0) == NULL ? g_module_not_defined : libvMI_get_module_name(0));
+    SNPRINTF(dest2, "%s|%lld|%5x:%5x: -i- %s: %s", module_name, tools::getUTCEpochTimeInMs(), GETPID, (unsigned int)GETTID, method.c_str(), dest);
+    vMI_report_sendmsg(dest2);
+#endif // _EXTERNAL_LOG_SUPPORT*/
     //WIN32_HOTFIX_FLUSH_OUTPUT();
 }
 void internal_LOG_COLOR(std::string method, LogColor color, const char* message, ...)
@@ -97,11 +207,11 @@ void internal_LOG_COLOR(std::string method, LogColor color, const char* message,
     va_start(argptr, message);
     VSNPRINTF(dest, message, argptr);
     va_end(argptr);
-#ifdef _WIN32
-    platform_log("%5x:%5x: *E* %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
-#else   //_WIN32
+#ifdef _SUPPORT_COLOR
     platform_log(DISPFORMAT_START "%5x:%5x: -i- %s: %s" DISPFORMAT_RESET, color, GETPID, (unsigned int)GETTID, method.c_str(), dest);
-#endif  //_WIN32
+#else   //_SUPPORT_COLOR
+    platform_log("%5x:%5x: *E* %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
+#endif  //_SUPPORT_COLOR
     WIN32_HOTFIX_FLUSH_OUTPUT();
 }
 void internal_LOG_WARNING(std::string method, const char* message, ...)
@@ -116,16 +226,7 @@ void internal_LOG_WARNING(std::string method, const char* message, ...)
     platform_log("%5x:%5x: +w+ %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
     WIN32_HOTFIX_FLUSH_OUTPUT();
 }
-#define _EXTERNAL_LOG_SUPPORT
-#ifdef _EXTERNAL_LOG_SUPPORT
-#include "libvMI.h"
-#include "tcp_basic.h"
-#include "tools.h"
-const char* g_module_not_defined = "<not_defined>";
-UDP g_logUdpSock;
-const char* g_logIP = "localhost";
-int         g_logPort = 1234;
-#endif // _EXTERNAL_LOG_SUPPORT
+
 void internal_LOG_ERROR(std::string method, const char* message, ...)
 {
     if (g_logLevel < LOG_LEVEL_ERROR)
@@ -135,30 +236,21 @@ void internal_LOG_ERROR(std::string method, const char* message, ...)
     va_start(argptr, message);
     VSNPRINTF(dest, message, argptr);
     va_end(argptr);
-#ifdef _WIN32
-    platform_log("%5x:%5x: *E* %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
-#else   //_WIN32
-    platform_log(DISPFORMAT_START "%5x:%5x: *E* %s: %s" DISPFORMAT_RESET, LOG_COLOR_RED, GETPID, (unsigned int)GETTID, method.c_str(), dest);
 
-#ifdef _EXTERNAL_LOG_SUPPORT
+#ifdef _SUPPORT_COLOR
+    platform_log(DISPFORMAT_START "%5x:%5x: *E* %s: %s" DISPFORMAT_RESET, LOG_COLOR_RED, GETPID, (unsigned int)GETTID, method.c_str(), dest);
+#else   //_SUPPORT_COLOR
+    platform_log("%5x:%5x: *E* %s: %s", GETPID, (unsigned int)GETTID, method.c_str(), dest);
+#endif  //_SUPPORT_COLOR
+
+/*#ifdef _EXTERNAL_LOG_SUPPORT
     char dest2[1500];
     const char* module_name = (libvMI_get_module_name(0) == NULL ? g_module_not_defined : libvMI_get_module_name(0));
     SNPRINTF(dest2, "%s|%lld|%5x:%5x: *E* %s: %s", module_name, tools::getUTCEpochTimeInMs(), GETPID, (unsigned int)GETTID, method.c_str(), dest);
-    if (!g_logUdpSock.isValid()) {
+    vMI_report_sendmsg(dest2);
+#endif // _EXTERNAL_LOG_SUPPORT*/    
 
-        int result = g_logUdpSock.openSocket(g_logIP, NULL, g_logPort, false, "");
-        if (result != 0) {
-            fprintf(stderr, "***ERROR*** can't create UDP socket on [%s]:%d on interface '%s'\r\n", g_logIP, g_logPort, "");
-        }
-    }
-    else {
-        int len = strlen(dest2);
-        int result = g_logUdpSock.writeSocket(dest2, &len);
-    }
-#endif // _EXTERNAL_LOG_SUPPORT
-
-#endif  //_WIN32
-    WIN32_HOTFIX_FLUSH_OUTPUT();
+	WIN32_HOTFIX_FLUSH_OUTPUT();
 }
 #define NB_ELEMENTS_BY_LINE	16
 void internal_LOG_DUMP(std::string method, const char* buffer, int size)
@@ -238,20 +330,4 @@ void hotfixWindowsPipeFlushes() {
 
     fflush(stderr);
     fflush(stdout);
-}
-
-#include "tcp_basic.h"
-UDP g_report_sock;
-bool g_report_ini = false;
-void vMI_report_init(const char* ip, int port) {
-    g_report_sock.openSocket((char*)ip, NULL, port);
-    g_report_ini = true;
-}
-void vMI_report_sendmsg(const char* mesg) {
-    if (!g_report_ini) {
-        vMI_report_init("10.228.40.49", 10001);
-    }
-    if (g_report_ini && g_report_sock.isValid()) {
-
-    }
 }

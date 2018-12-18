@@ -44,8 +44,7 @@ COutRTP::~COutRTP()
     delete _udpSock;
 }
 
-int COutRTP::send(CvMIFrame* frame)
-{
+int COutRTP::send(CvMIFrame* frame) {
 
     //LOG_INFO("%s: --> <--  buffer=0x%x", _name.c_str(), buffer);
     int result = E_OK;
@@ -72,10 +71,41 @@ int COutRTP::send(CvMIFrame* frame)
     //
     if( _udpSock->isValid() )
     {
+#ifdef _DEBUG_RTP
+        int p1 = frame->getFrameSize();
+        int p2, p3;
+        frame->get_header(VIDEO_WIDTH, (void*)&p2);
+        frame->get_header(VIDEO_HEIGHT, (void*)&p3);
+#endif
         int result = _packetizer.send(_udpSock, (char*)frame->getFrameBuffer(), frame->getFrameSize());
         if (result != VMI_E_OK) {
             ret = -1;
         }
+#ifdef _DEBUG_RTP
+        try {
+            int pp2, pp3;
+            if (p1 != frame->getFrameSize()) {
+                LOG_ERROR("1 Frame size has been changed... Data corrupted?");
+            }
+            frame->get_header(VIDEO_WIDTH, (void*)&pp2);
+            frame->get_header(VIDEO_HEIGHT, (void*)&pp3);
+            if (pp2 != p2 || pp3 != p3) {
+                LOG_ERROR("1 Frame size has been changed (%d/%d, %d/%d)... Data corrupted?", p2, pp2, p3, pp3);
+            }
+            frame->refreshHeaders();
+            if (p1 != frame->getFrameSize()) {
+                LOG_ERROR("2 Frame size has been changed... Data corrupted?");
+            }
+            frame->get_header(VIDEO_WIDTH, (void*)&pp2);
+            frame->get_header(VIDEO_HEIGHT, (void*)&pp3);
+            if (pp2 != p2 || pp3 != p3) {
+                LOG_ERROR("2 Frame size has been changed (%d/%d, %d/%d)... Data corrupted?", p2, pp2, p3, pp3);
+            }
+        }
+        catch (...) {
+            LOG_ERROR("Exception when try to refresh Headers... Data corrupted?");
+        }
+#endif
     }
 
     return ret;

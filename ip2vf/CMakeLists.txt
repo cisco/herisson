@@ -4,6 +4,8 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 project (vMI_all)
 
+set(WANTED_LIBEGEL_SUPPORT FALSE)
+set(WANTED_PROBE_SUPPORT FALSE)
 set(WANTED_PROBE_SUPPORT TRUE)
 
 
@@ -39,7 +41,6 @@ if (OPENCV2_INCLUDE_DIRS AND OPENCV2_LIBRARIES)
    set(HAVE_OPENCV2 TRUE)
 endif()
 
-
 #Detect X11
 find_library(X11_LIBRARIES X11)
 if (X11_LIBRARIES)
@@ -72,6 +73,7 @@ set(COMMON_SOURCE_FILES
    "circularbuffer.cpp"
    "yuv.cpp"
    "log.cpp"
+   "logreport.cpp"
    "tcp_basic.cpp"
    "rtpframe.cpp"
    "frameheaders.cpp"

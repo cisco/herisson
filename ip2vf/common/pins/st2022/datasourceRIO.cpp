@@ -10,6 +10,9 @@
 #include "moduleconfiguration.h"
 #include "configurable.h"
 using namespace std;
+
+#pragma warning( disable : 4312 )	// For visual studio
+
 // AllocateBufferSpace() from http://www.serverframework.com/asynchronousevents/rio/
 template <typename TV, typename TM>
 inline TV RoundDown(TV Value, TM Multiple)

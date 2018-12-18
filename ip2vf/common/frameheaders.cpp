@@ -116,97 +116,104 @@ int CFrameHeaders::WriteHeaders(unsigned char* buffer, int frame_nb) {
     if (frame_nb > -1)
         _framenb = frame_nb;
 
-    memset(buffer, 0, FRAME_HEADER_LENGTH);
+    try {
 
-    buffer[0] = FRAME_HEADER_MAGIC_1;
-    buffer[1] = FRAME_HEADER_MAGIC_2;
-    buffer[2] = FRAME_HEADER_MAGIC_3;
-    buffer[3] = FRAME_HEADER_MAGIC_4;
+        memset(buffer, 0, FRAME_HEADER_LENGTH);
 
-    buffer[4] = _versionmajor & 0b11111111;
-    buffer[5] = _versionminor & 0b11111111;
-    buffer[6] = _versionpatch & 0b11111111;
-    buffer[7] = 0;  // Reserved
+        buffer[0] = FRAME_HEADER_MAGIC_1;
+        buffer[1] = FRAME_HEADER_MAGIC_2;
+        buffer[2] = FRAME_HEADER_MAGIC_3;
+        buffer[3] = FRAME_HEADER_MAGIC_4;
 
-    buffer[8] =  (_framenb >> 24) & 0b11111111;
-    buffer[9] =  (_framenb >> 16) & 0b11111111;
-    buffer[10] = (_framenb >> 8) & 0b11111111;
-    buffer[11] = _framenb & 0b11111111;
+        buffer[4] = _versionmajor & 0b11111111;
+        buffer[5] = _versionminor & 0b11111111;
+        buffer[6] = _versionpatch & 0b11111111;
+        buffer[7] = 0;  // Reserved
 
-    buffer[12] = _moduleid;
-    buffer[13] = (int)_mediafmt;
-    buffer[14] = 0;  // Reserved
-    buffer[15] = 0;  // Reserved
+        buffer[8] =  (_framenb >> 24) & 0b11111111;
+        buffer[9] =  (_framenb >> 16) & 0b11111111;
+        buffer[10] = (_framenb >> 8) & 0b11111111;
+        buffer[11] = _framenb & 0b11111111;
 
-    buffer[16] = (_mediasize >> 24) & 0b11111111;
-    buffer[17] = (_mediasize >> 16) & 0b11111111;
-    buffer[18] = (_mediasize >> 8) & 0b11111111;
-    buffer[19] = _mediasize & 0b11111111;
+        buffer[12] = _moduleid;
+        buffer[13] = (int)_mediafmt;
+        buffer[14] = 0;  // Reserved
+        buffer[15] = 0;  // Reserved
 
-    buffer[20] = (_mediatimestamp >> 24) & 0b11111111;
-    buffer[21] = (_mediatimestamp >> 16) & 0b11111111;
-    buffer[22] = (_mediatimestamp >> 8) & 0b11111111;
-    buffer[23] = _mediatimestamp & 0b11111111;
+        buffer[16] = (_mediasize >> 24) & 0b11111111;
+        buffer[17] = (_mediasize >> 16) & 0b11111111;
+        buffer[18] = (_mediasize >> 8) & 0b11111111;
+        buffer[19] = _mediasize & 0b11111111;
 
-    buffer[24] = (_srctimestamp >> 56) & 0b11111111;
-    buffer[25] = (_srctimestamp >> 48) & 0b11111111;
-    buffer[26] = (_srctimestamp >> 40) & 0b11111111;
-    buffer[27] = (_srctimestamp >> 32) & 0b11111111;
+        buffer[20] = (_mediatimestamp >> 24) & 0b11111111;
+        buffer[21] = (_mediatimestamp >> 16) & 0b11111111;
+        buffer[22] = (_mediatimestamp >> 8) & 0b11111111;
+        buffer[23] = _mediatimestamp & 0b11111111;
 
-    buffer[28] = (_srctimestamp >> 24) & 0b11111111;
-    buffer[29] = (_srctimestamp >> 16) & 0b11111111;
-    buffer[30] = (_srctimestamp >> 8) & 0b11111111;
-    buffer[31] = _srctimestamp & 0b11111111;
+        buffer[24] = (_srctimestamp >> 56) & 0b11111111;
+        buffer[25] = (_srctimestamp >> 48) & 0b11111111;
+        buffer[26] = (_srctimestamp >> 40) & 0b11111111;
+        buffer[27] = (_srctimestamp >> 32) & 0b11111111;
 
-    if (_mediafmt == MEDIAFORMAT::VIDEO) {
-        buffer[MEDIA_HEADER_OFFSET + 0]  = (_w >> 8) & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 1]  = _w & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 2]  = (_h >> 8) & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 3]  = _h & 0b11111111;
+        buffer[28] = (_srctimestamp >> 24) & 0b11111111;
+        buffer[29] = (_srctimestamp >> 16) & 0b11111111;
+        buffer[30] = (_srctimestamp >> 8) & 0b11111111;
+        buffer[31] = _srctimestamp & 0b11111111;
 
-        buffer[MEDIA_HEADER_OFFSET + 4]  = (_frametype << 7) & 0b10000000;
-        buffer[MEDIA_HEADER_OFFSET + 4] |= (_odd << 6)      & 0b01000000;
-        buffer[MEDIA_HEADER_OFFSET + 4] |= _pgroupsize      & 0b00111111;
-        buffer[MEDIA_HEADER_OFFSET + 5]  = (_colorimetry << 5) & 0b11100000;
-        buffer[MEDIA_HEADER_OFFSET + 5] |= _samplingformat    & 0b00011111;
-        buffer[MEDIA_HEADER_OFFSET + 6]  = _depth & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 7]  = _framerateCode & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 8]  = _smpteframeCode & 0b11111111;
+        if (_mediafmt == MEDIAFORMAT::VIDEO) {
+            buffer[MEDIA_HEADER_OFFSET + 0]  = (_w >> 8) & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 1]  = _w & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 2]  = (_h >> 8) & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 3]  = _h & 0b11111111;
+
+            buffer[MEDIA_HEADER_OFFSET + 4]  = (_frametype << 7) & 0b10000000;
+            buffer[MEDIA_HEADER_OFFSET + 4] |= (_odd << 6)      & 0b01000000;
+            buffer[MEDIA_HEADER_OFFSET + 4] |= _pgroupsize      & 0b00111111;
+            buffer[MEDIA_HEADER_OFFSET + 5]  = (_colorimetry << 5) & 0b11100000;
+            buffer[MEDIA_HEADER_OFFSET + 5] |= _samplingformat    & 0b00011111;
+            buffer[MEDIA_HEADER_OFFSET + 6]  = _depth & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 7]  = _framerateCode & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 8]  = _smpteframeCode & 0b11111111;
+        }
+        else 
+        {
+            buffer[MEDIA_HEADER_OFFSET + 0]  = _channelnb & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 1]  = (_audiofmt << 4) & 0b11110000;
+            buffer[MEDIA_HEADER_OFFSET + 1] |= _samplerate & 0b00001111;
+            buffer[MEDIA_HEADER_OFFSET + 2]  = (_packettime >> 8) & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 3]  = _packettime & 0b11111111;
+            buffer[MEDIA_HEADER_OFFSET + 4]  = 0;  // reserved
+            buffer[MEDIA_HEADER_OFFSET + 5]  = 0;  // reserved
+            buffer[MEDIA_HEADER_OFFSET + 6]  = 0;  // reserved
+            buffer[MEDIA_HEADER_OFFSET + 7]  = 0;  // reserved
+        }
+
+        buffer[EXT_HEADER_OFFSET + 0] = (_inputtimestamp >> 56) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 1] = (_inputtimestamp >> 48) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 2] = (_inputtimestamp >> 40) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 3] = (_inputtimestamp >> 32) & 0b11111111;
+
+        buffer[EXT_HEADER_OFFSET + 4] = (_inputtimestamp >> 24) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 5] = (_inputtimestamp >> 16) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 6] = (_inputtimestamp >> 8) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 7] = _inputtimestamp & 0b11111111;
+
+        buffer[EXT_HEADER_OFFSET + 8]  = (_outputtimestamp >> 56) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 9]  = (_outputtimestamp >> 48) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 10] = (_outputtimestamp >> 40) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 11] = (_outputtimestamp >> 32) & 0b11111111;
+
+        buffer[EXT_HEADER_OFFSET + 12] = (_outputtimestamp >> 24) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 13] = (_outputtimestamp >> 16) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 14] = (_outputtimestamp >> 8) & 0b11111111;
+        buffer[EXT_HEADER_OFFSET + 15] = _outputtimestamp & 0b11111111;
+
+        STRNCPY((char*)&buffer[EXT_HEADER_OFFSET + 16], _namedata, FRAME_NAME_LENGTH);
     }
-    else 
-    {
-        buffer[MEDIA_HEADER_OFFSET + 0]  = _channelnb & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 1]  = (_audiofmt << 4) & 0b11110000;
-        buffer[MEDIA_HEADER_OFFSET + 1] |= _samplerate & 0b00001111;
-        buffer[MEDIA_HEADER_OFFSET + 2]  = (_packettime >> 8) & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 3]  = _packettime & 0b11111111;
-        buffer[MEDIA_HEADER_OFFSET + 4]  = 0;  // reserved
-        buffer[MEDIA_HEADER_OFFSET + 5]  = 0;  // reserved
-        buffer[MEDIA_HEADER_OFFSET + 6]  = 0;  // reserved
-        buffer[MEDIA_HEADER_OFFSET + 7]  = 0;  // reserved
+    catch (...) {
+        LOG_ERROR("Major error when writing vMI headers... seems data is corrupted. skip this frame!");
+        return VMI_E_INVALID_HEADERS;
     }
-
-    buffer[EXT_HEADER_OFFSET + 0] = (_inputtimestamp >> 56) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 1] = (_inputtimestamp >> 48) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 2] = (_inputtimestamp >> 40) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 3] = (_inputtimestamp >> 32) & 0b11111111;
-
-    buffer[EXT_HEADER_OFFSET + 4] = (_inputtimestamp >> 24) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 5] = (_inputtimestamp >> 16) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 6] = (_inputtimestamp >> 8) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 7] = _inputtimestamp & 0b11111111;
-
-    buffer[EXT_HEADER_OFFSET + 8]  = (_outputtimestamp >> 56) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 9]  = (_outputtimestamp >> 48) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 10] = (_outputtimestamp >> 40) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 11] = (_outputtimestamp >> 32) & 0b11111111;
-
-    buffer[EXT_HEADER_OFFSET + 12] = (_outputtimestamp >> 24) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 13] = (_outputtimestamp >> 16) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 14] = (_outputtimestamp >> 8) & 0b11111111;
-    buffer[EXT_HEADER_OFFSET + 15] = _outputtimestamp & 0b11111111;
-
-    STRNCPY((char*)&buffer[EXT_HEADER_OFFSET + 16], _namedata, FRAME_NAME_LENGTH);
 
     return VMI_E_OK;
 }

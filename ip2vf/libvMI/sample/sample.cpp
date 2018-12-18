@@ -51,9 +51,10 @@ void signal_handler(int signum) {
 /**
  * \brief process_data
  */
-void process_data(unsigned char* in, unsigned char* out, int size) {
+void process_data(unsigned char* data, int size) {
+
     g_nbFrame++;
-    memcpy(out, in, size);
+    //DO SOMETHING HERE WITH VIDEO DATA
 }
 
 /*
@@ -64,8 +65,8 @@ void process_data(unsigned char* in, unsigned char* out, int size) {
  * \param param (some values returned by libvMI, not used for now)
  * \param in handle of the input that provide the event
  */
-void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_handle in, libvMI_frame_handle hFrame)
-{
+void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_handle in, libvMI_frame_handle hFrame) {
+
     switch (cmd) {
         case CMD_INIT:
             break;
@@ -85,10 +86,15 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
 
                 if (fmt == MEDIAFORMAT::VIDEO ) {
 
-                    int nb_output = libvMI_get_output_count(g_vMIModule);
+                    /*
+                    * Do something on video buffer
+                    */
+                    process_data((unsigned char*)pInFrameBuffer, size);
+
                     /*
                     * Iterate on each output to copy and send what received from input
                     */
+                    int nb_output = libvMI_get_output_count(g_vMIModule);
                     for (int i = 0; i < nb_output; i++) {
                         int outputHandle = libvMI_get_output_handle(g_vMIModule, i);
                         if (outputHandle != LIBVMI_INVALID_HANDLE) {
@@ -127,7 +133,7 @@ void libvMI_callback(const void* user_data, CmdType cmd, int param, libvMI_pin_h
  * \return int
  */
 int main(int argc, char* argv[]) {
-    int port = 5010;
+
     bool autostart = false;
     char preconfig[MSG_MAX_LEN];
     bool use_preconfig = false;
@@ -137,19 +143,14 @@ int main(int argc, char* argv[]) {
     // Check parameters
     if (argc >= 2) {
         for (int i = 0; i < argc; i++) {
-            if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-                port = atoi(argv[i + 1]);
-            } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+            if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
                 strncpy(preconfig, argv[i + 1], MSG_MAX_LEN);
                 preconfig[MSG_MAX_LEN - 1] = '\0';
                 use_preconfig = true;
             } else if (strcmp(argv[i], "-h") == 0) {
-                std::cout << "usage: " << argv[0] << " [-h] [-v] [-p <port>] [-c <config>] [-autostart] [-s <image size>]" << std::endl;
+                std::cout << "usage: " << argv[0] << " [-h] [-c <config>]" << std::endl;
                 std::cout << "         -h " << std::endl;
-                std::cout << "         -v " << std::endl;
-                std::cout << "         -p <port> " << std::endl;
                 std::cout << "         -c <config> " << std::endl;
-                std::cout << "         -autostart " << std::endl;
                 return 0;
             }
         }
@@ -168,7 +169,7 @@ int main(int argc, char* argv[]) {
      * libvMI will wait for configuration provided by supervisor
      */
     std::unique_lock<std::mutex> lock(g_mtx);
-    g_vMIModule = libvMI_create_module(port, &libvMI_callback, (use_preconfig ? preconfig : NULL));
+    g_vMIModule = libvMI_create_module(&libvMI_callback, (use_preconfig ? preconfig : NULL));
     if (g_vMIModule == LIBVMI_INVALID_HANDLE) {
         std::cout << "main(): *E* invalid Module id. Abort!" << std::endl;
         return 0;

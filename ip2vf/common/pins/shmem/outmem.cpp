@@ -92,7 +92,7 @@ int COutMem::send(CvMIFrame* frame)
             _shm_data = NULL;
         }
         _shm_size = _shm_nbseg * frame->getFrameSize();
-        LOG_INFO("Get another shmem segment of size %d bytes, _shm_key=%d, nbSeg=%d. Frame size=%d", _shm_size, _shm_key, _shm_nbseg, frame->getFrameSize());
+        LOG_INFO("Get another shmem segment of size %d bytes, key=%d, nbSeg=%d*%d bytes for control=%d", _shm_size, _shm_key, _shm_nbseg, frame->getFrameSize(), _port);
         _shm_data = tools::createSHMSegment_ext(_shm_size, _shm_key, _shm_id, false);
         if (_shm_data == NULL) {
             LOG_ERROR("%s: ***ERROR*** failed to create shared memory segment. Aborting!!.", _name.c_str());
@@ -156,12 +156,12 @@ int COutMem::send(CvMIFrame* frame)
         if (_udpSock.isValid() && ret!=E_ERROR) {
             // just notify the next module
             char msg[VMI_MEM_MSG_LEN];
-            snprintf(msg, VMI_MEM_MSG_LEN, VMI_MEM_MSG_FORMAT, _shm_key, memoffset, _sessionId);
+            snprintf(msg, VMI_MEM_MSG_LEN, VMI_MEM_MSG_FORMAT, _shm_key, _shm_size, memoffset, _sessionId);
             int len = (int)strlen(msg);
             int rc = _udpSock.writeSocket(msg, &len);
             if (rc < 0)
-                LOG("%s: ***ERROR*** zmq_send failed with errno=%s", _name.c_str(), strerror(errno));    // Not an error, it can be because the recv is not here, and we already fill the queue
-            LOG("%s: write frame of size=%d on shmem", _name.c_str(), _shm_size);
+                LOG_ERROR("%s: ***ERROR*** writeSocket failed with errno=%s", _name.c_str(), strerror(errno));    // Not an error, it can be because the recv is not here, and we already fill the queue
+            //LOG("%s: write frame of size=%d on shmem", _name.c_str(), _shm_size);
             _shm_wr_pt = (_shm_wr_pt + 1) % _shm_nbseg;
         }
     }

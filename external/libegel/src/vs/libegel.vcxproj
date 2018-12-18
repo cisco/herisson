@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_libegel|x64">
+      <Configuration>Release_libegel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BF108125-2F00-4747-B10D-59B676A26370}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>igmp_dpdk</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>Intel C++ Compiler 18.0</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>Intel C++ Compiler 18.0</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project=".\DpdkRteLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project=".\DpdkRteLib.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IntDir>$(RTE_SDK)\mk\exec-env\windows\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\obj\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\..\build\windows\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <AdditionalIncludeDirectories>../../../pthreadVC/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>pthreadVC2.lib;ws2_32.lib;setupapi.lib;dbghelp.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_bus_pci\librte_bus_pci.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_pci\librte_pci.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_eal\librte_eal.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_ether\librte_ether.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_mempool\librte_mempool.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_mempool_ring\librte_mempool_ring.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_mbuf\librte_mbuf.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_ring\librte_ring.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_hash\librte_hash.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_distributor\librte_distributor.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_lpm\librte_lpm.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_kvargs\librte_kvargs.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_pmd_i40e\librte_pmd_i40e.lib;$(RTE_SDK)\$(Platform)\$(Configuration)\librte_net\librte_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\external\pthreads-w32-2-9-1-release\Pre-built.2\lib\x64</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_libegel|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_USE_WIN_PTHREAD_;EGELLIBRARY_EXPORTS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\external\pthreads-w32-2-9-1-release\Pre-built.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>pthreadVC2.lib;ws2_32.lib;setupapi.lib;dbghelp.lib;$(RTE_SDK)\$(Platform)\Release\librte_bus_pci\librte_bus_pci.lib;$(RTE_SDK)\$(Platform)\Release\librte_pci\librte_pci.lib;$(RTE_SDK)\$(Platform)\Release\librte_eal\librte_eal.lib;$(RTE_SDK)\$(Platform)\Release\librte_ether\librte_ether.lib;$(RTE_SDK)\$(Platform)\Release\librte_mempool\librte_mempool.lib;$(RTE_SDK)\$(Platform)\Release\librte_mempool_ring\librte_mempool_ring.lib;$(RTE_SDK)\$(Platform)\Release\librte_mbuf\librte_mbuf.lib;$(RTE_SDK)\$(Platform)\Release\librte_ring\librte_ring.lib;$(RTE_SDK)\$(Platform)\Release\librte_hash\librte_hash.lib;$(RTE_SDK)\$(Platform)\Release\librte_distributor\librte_distributor.lib;$(RTE_SDK)\$(Platform)\Release\librte_lpm\librte_lpm.lib;$(RTE_SDK)\$(Platform)\Release\librte_kvargs\librte_kvargs.lib;$(RTE_SDK)\$(Platform)\Release\librte_pmd_i40e\librte_pmd_i40e.lib;$(RTE_SDK)\$(Platform)\Release\librte_net\librte_net.lib;$(RTE_SDK)\$(Platform)\Release\librte_timer\librte_timer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\external\pthreads-w32-2-9-1-release\Pre-built.2\lib\x64</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(OutDir)libegel.lib" "$(SolutionDir)..\..\external\libegel\lib"
+xcopy /y /d "$(OutDir)libegel.dll" "$(SolutionDir)..\..\external\libegel\lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\dpdk.h" />
+    <ClInclude Include="..\common.h" />
+    <ClInclude Include="..\ipaddr.h" />
+    <ClInclude Include="..\libegel.h" />
+    <ClInclude Include="..\master.h" />
+    <ClInclude Include="..\q.h" />
+    <ClInclude Include="..\rte_windows.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\dpdk.c" />
+    <ClCompile Include="..\dpdkflow.c" />
+    <ClCompile Include="..\dpdknic.c" />
+    <ClCompile Include="..\flow.c" />
+    <ClCompile Include="..\igmp.c" />
+    <ClCompile Include="..\ipaddr.c" />
+    <ClCompile Include="..\libegel.c" />
+    <ClCompile Include="..\master.c" />
+    <ClCompile Include="..\print.c" />
+    <ClCompile Include="..\q.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Makefile" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

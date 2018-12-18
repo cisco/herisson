@@ -19,8 +19,8 @@ using namespace std;
 ***********************************************************************************************/
 
 
-CIn::CIn(CModuleConfiguration* pMainCfg, int nIndex)
-{ 
+CIn::CIn(CModuleConfiguration* pMainCfg, int nIndex) { 
+
     _mediaformat    = MEDIAFORMAT::VIDEO;
     _nIndex         = nIndex;
     _nModuleId      = pMainCfg->_id;
@@ -30,6 +30,7 @@ CIn::CIn(CModuleConfiguration* pMainCfg, int nIndex)
 };
 
 TransportType CIn::getTransportType() {
+
     if (MEMORY_TYPE(_nType))
         return TRANSPORT_TYPE_MEMORY;
     else if(STREAMING_TYPE(_nType))

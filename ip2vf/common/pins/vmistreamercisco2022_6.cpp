@@ -27,6 +27,7 @@ CvMIStreamerCisco2022_6::CvMIStreamerCisco2022_6(const char* ip, const char* mca
     _firstCompletedFrame = false;
     _frame.frame = new CSMPTPFrame();
     _curFrameNb = 0;
+LOG_ERROR("ip=%s, mcast=%s, port=%d", ip, mcastgroup, port);
 }
 
 CvMIStreamerCisco2022_6::~CvMIStreamerCisco2022_6() {
@@ -73,7 +74,7 @@ int CvMIStreamerCisco2022_6::send(CvMIFrame* frame) {
         profile.initProfileFromIP2VF(headers);
         if (profile.getStandard() == SMPTE_NOT_DEFINED)
         {
-            LOG_ERROR("can't find appropriate SMPTE profile. abort!");
+            //LOG_ERROR("can't find appropriate SMPTE profile. abort!");
             return VMI_E_INVALID_FRAME;
         }
         profile.dumpProfile();

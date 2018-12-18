@@ -87,8 +87,8 @@ CHBRMPFrame::CHBRMPFrame(const unsigned char* frame, int len) : CHBRMPFrame() {
 CHBRMPFrame::~CHBRMPFrame() {
 }
 
-void CHBRMPFrame::dumpHeader()
-{
+void CHBRMPFrame::dumpHeader() {
+
     LOG_INFO("------");
 
     LOG_INFO("ext          = %d", _ext);
@@ -103,26 +103,36 @@ void CHBRMPFrame::dumpHeader()
 }
 
 void CHBRMPFrame::extractData() {
-    //LOG_DUMP(_frame, HBRMP_FIXED_LENGTH);
-    _ext       =  (_frame[0] & 0b11110000) >> 4;
-    _f         =  (_frame[0] & 0b00001000) >> 3;
-    _vsid      =   _frame[0] & 0b00000111;
-    _frcount   =   _frame[1];
-    _r         = static_cast<REF_FOR_TIMESTAMP>((_frame[2] & 0b11000000) >> 6);
-    _s         =  (_frame[2] & 0b00110000) >> 4;
-    _fec       =  (_frame[2] & 0b00001110) >> 1;
-    _cf        = GET_CLOCK_FREQUENCY(((_frame[2] & 0b00000001) << 3) + ((_frame[3] & 0b11100000) >> 5));
-    _map       =  (_frame[4] & 0b11110000) >> 4;
-    _frm       = ((_frame[4] & 0b00001111) << 4) + ((_frame[5] & 0b11110000) >> 4);
-    _frate     = ((_frame[5] & 0b00001111) << 4) + ((_frame[6] & 0b11110000) >> 4);
-    _sample    =  (_frame[6] & 0b00001111);
-    _timestamp =  (_frame[8] << 24) + (_frame[9] << 16) + (_frame[10] << 8) + _frame[11];
-    _headerlen  = HBRMP_FIXED_LENGTH + (_cf > 0 ? HBRMP_VIDEO_TIMESTAMP_LENGTH : 0) + (_ext > 0 ? _ext * 4 : 0);
-    _payloadlen = _framelen - _headerlen;
+
+    if (_frame == NULL)
+        return;
+
+    try {
+        //LOG_DUMP(_frame, HBRMP_FIXED_LENGTH);
+        _ext       =  (_frame[0] & 0b11110000) >> 4;
+        _f         =  (_frame[0] & 0b00001000) >> 3;
+        _vsid      =   _frame[0] & 0b00000111;
+        _frcount   =   _frame[1];
+        _r         = static_cast<REF_FOR_TIMESTAMP>((_frame[2] & 0b11000000) >> 6);
+        _s         =  (_frame[2] & 0b00110000) >> 4;
+        _fec       =  (_frame[2] & 0b00001110) >> 1;
+        _cf        = GET_CLOCK_FREQUENCY(((_frame[2] & 0b00000001) << 3) + ((_frame[3] & 0b11100000) >> 5));
+        _map       =  (_frame[4] & 0b11110000) >> 4;
+        _frm       = ((_frame[4] & 0b00001111) << 4) + ((_frame[5] & 0b11110000) >> 4);
+        _frate     = ((_frame[5] & 0b00001111) << 4) + ((_frame[6] & 0b11110000) >> 4);
+        _sample    =  (_frame[6] & 0b00001111);
+        _timestamp =  (_frame[8] << 24) + (_frame[9] << 16) + (_frame[10] << 8) + _frame[11];
+        _headerlen  = HBRMP_FIXED_LENGTH + (_cf > 0 ? HBRMP_VIDEO_TIMESTAMP_LENGTH : 0) + (_ext > 0 ? _ext * 4 : 0);
+        _payloadlen = _framelen - _headerlen;
+    }
+    catch (...) {
+        LOG_ERROR("Major error when reading HBRMP headers... seems data is corrupted. skip this frame!");
+        return;
+    }
 }
 
-void CHBRMPFrame::initFixedHBRMPValuesFromProfile(CSMPTPProfile* profile)
-{
+void CHBRMPFrame::initFixedHBRMPValuesFromProfile(CSMPTPProfile* profile) {
+
     // Pre-defined parameters
     _ext = 0;
     _f = 1;
@@ -170,38 +180,52 @@ void CHBRMPFrame::initFixedHBRMPValuesFromProfile(CSMPTPProfile* profile)
 }
 
 void CHBRMPFrame::writeHeader(int frcount, unsigned int timestamp) {
+
+    if (_frame == NULL)
+        return;
+
     _timestamp = timestamp;
     _frcount = frcount%256;
-    memset(_frame, 0, HBRMP_FIXED_LENGTH + (_cf > 0 ? HBRMP_VIDEO_TIMESTAMP_LENGTH : 0));
-    _frame[0] |= ((_ext << 4) & 0b11110000);
-    _frame[0] |= ((_f << 3) & 0b00001000);
-    _frame[0] |= (_vsid & 0b00000100);
-    _frame[1]  = _frcount & 0b11111111;
-    _frame[2] |= (_r << 6) & 0b11000000;
-    _frame[2] |= (_s << 4) & 0b00110000;
-    _frame[2] |= (_fec << 4) & 0b00001110;
-    _frame[2] |= (_cf >> 3) & 0b00000001;
-    _frame[3] |= (_cf << 5) & 0b11100000;
-    _frame[4] |= (_map << 4) & 0b11110000;
-    _frame[4] |= (_frm >> 4) & 0b00001111;
-    _frame[5] |= (_frm << 4) & 0b11110000;
-    _frame[5] |= (_frate >> 4) & 0b00001111;
-    _frame[6] |= (_frate << 4) & 0b11110000;
-    _frame[6] |= _sample & 0b00001111;
-    // add timestamp
-    if (_cf != 3)
-        _timestamp = 0;
-    _frame[8]  = (_timestamp >> 24) & 0b11111111;
-    _frame[9]  = (_timestamp >> 16) & 0b11111111;
-    _frame[10] = (_timestamp >> 8) & 0b11111111;
-    _frame[11] = _timestamp & 0b11111111;
+    try {
+        memset(_frame, 0, HBRMP_FIXED_LENGTH + (_cf > 0 ? HBRMP_VIDEO_TIMESTAMP_LENGTH : 0));
+        _frame[0] |= ((_ext << 4) & 0b11110000);
+        _frame[0] |= ((_f << 3) & 0b00001000);
+        _frame[0] |= (_vsid & 0b00000100);
+        _frame[1]  = _frcount & 0b11111111;
+        _frame[2] |= (_r << 6) & 0b11000000;
+        _frame[2] |= (_s << 4) & 0b00110000;
+        _frame[2] |= (_fec << 4) & 0b00001110;
+        _frame[2] |= (_cf >> 3) & 0b00000001;
+        _frame[3] |= (_cf << 5) & 0b11100000;
+        _frame[4] |= (_map << 4) & 0b11110000;
+        _frame[4] |= (_frm >> 4) & 0b00001111;
+        _frame[5] |= (_frm << 4) & 0b11110000;
+        _frame[5] |= (_frate >> 4) & 0b00001111;
+        _frame[6] |= (_frate << 4) & 0b11110000;
+        _frame[6] |= _sample & 0b00001111;
+        // add timestamp
+        if (_cf != 3)
+            _timestamp = 0;
+        _frame[8]  = (_timestamp >> 24) & 0b11111111;
+        _frame[9]  = (_timestamp >> 16) & 0b11111111;
+        _frame[10] = (_timestamp >> 8) & 0b11111111;
+        _frame[11] = _timestamp & 0b11111111;
+    }
+    catch (...) {
+        LOG_ERROR("Major error when writing HBRMP headers... seems data is corrupted. skip this frame!");
+        return;
+    }
 }
 
 void CHBRMPFrame::dumpPayload(int size) {
+
     LOG_DUMP((const char*)_frame+ _headerlen, size);
 }
-void CHBRMPFrame::dumpHeader10bits(int size)
-{
+void CHBRMPFrame::dumpHeader10bits(int size) {
+
+    if (_frame == NULL)
+        return;
+
     int pos = 0;
     unsigned char* p = _frame + _headerlen;
     char line[1024];
@@ -209,24 +233,30 @@ void CHBRMPFrame::dumpHeader10bits(int size)
     int tokens=0;
     line[0] = '\0';
     int w[4];
-    while (pos <= size) {
-        // 4 word of 10 bits = 40 bits = 5 bytes
-        w[0] = ((p[0]             ) << 2) + ((p[1] & 0b11000000) >> 6);
-        w[1] = ((p[1] & 0b00111111) << 4) + ((p[2] & 0b11110000) >> 4);
-        w[2] = ((p[2] & 0b00001111) << 6) + ((p[3] & 0b11111100) >> 2);
-        w[3] = ((p[3] & 0b00000011) << 8) + ((p[4]             )     );
-        int nb = MIN(4, size - pos);
-        tokens += nb;
-        for (int i = 0; i < nb; i++) {
-            SNPRINTF(token, 64, "%03x ", w[i]);
-            strcat(line, token);
+    try {
+        while (pos <= size) {
+            // 4 word of 10 bits = 40 bits = 5 bytes
+            w[0] = ((p[0]             ) << 2) + ((p[1] & 0b11000000) >> 6);
+            w[1] = ((p[1] & 0b00111111) << 4) + ((p[2] & 0b11110000) >> 4);
+            w[2] = ((p[2] & 0b00001111) << 6) + ((p[3] & 0b11111100) >> 2);
+            w[3] = ((p[3] & 0b00000011) << 8) + ((p[4]             )     );
+            int nb = MIN(4, size - pos);
+            tokens += nb;
+            for (int i = 0; i < nb; i++) {
+                SNPRINTF(token, 64, "%03x ", w[i]);
+                strcat(line, token);
+            }
+            pos += 4; p += 4;
+            if (tokens >= 16 || pos == size) {
+                LOG_INFO("0x%s", line);
+                tokens = 0;
+                line[0] = '\0';
+            }
         }
-        pos += 4; p += 4;
-        if (tokens >= 16 || pos == size) {
-            LOG_INFO("0x%s", line);
-            tokens = 0;
-            line[0] = '\0';
-        }
+    }
+    catch (...) {
+        LOG_ERROR("Major error when trying to dump HBRMP headers... seems data is corrupted. skip this frame!");
+        return;
     }
 }
 

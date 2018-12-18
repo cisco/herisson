@@ -1,0 +1,85 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvMI", "..\libvMI\libvMI.vcxproj", "{FE92B541-1527-41D2-AE97-E8AF0BA1916C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BF108125-2F00-4747-B10D-59B676A26370} = {BF108125-2F00-4747-B10D-59B676A26370}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_adapter", "..\vMIModules\vMI_adapter.vcxproj", "{68457C27-5EAC-467A-A2B2-70158F1F5EA1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_converter", "..\vMIModules\vMI_converter.vcxproj", "{F31912A2-6437-4B32-BC22-982DA535E84A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_demuxer", "..\vMIModules\vMI_demuxer.vcxproj", "{C4AA64AD-1E96-44DB-A6F1-C753FB02B301}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_frameretarder", "..\vMIModules\vMI_frameretarder.vcxproj", "{AAE3A34F-6C0E-4A14-B5C7-1890BC772EB8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_synchronizer", "..\vMIModules\vMI_synchronizer.vcxproj", "{F7A3D7B9-2071-4EDF-9B0B-D5477DA3E977}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vMI_analyzer", "..\vMIModules\vMI_analyzer.vcxproj", "{EABF1835-9523-4F51-A742-DA1FBC7AD5F0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C} = {FE92B541-1527-41D2-AE97-E8AF0BA1916C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libegel", "..\..\external\libegel\src\vs\libegel.vcxproj", "{BF108125-2F00-4747-B10D-59B676A26370}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release_libegel|x64 = Release_libegel|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C}.Debug|x64.ActiveCfg = Debug|x64
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C}.Debug|x64.Build.0 = Debug|x64
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{FE92B541-1527-41D2-AE97-E8AF0BA1916C}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{68457C27-5EAC-467A-A2B2-70158F1F5EA1}.Debug|x64.ActiveCfg = Debug|x64
+		{68457C27-5EAC-467A-A2B2-70158F1F5EA1}.Debug|x64.Build.0 = Debug|x64
+		{68457C27-5EAC-467A-A2B2-70158F1F5EA1}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{68457C27-5EAC-467A-A2B2-70158F1F5EA1}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{F31912A2-6437-4B32-BC22-982DA535E84A}.Debug|x64.ActiveCfg = Debug|x64
+		{F31912A2-6437-4B32-BC22-982DA535E84A}.Debug|x64.Build.0 = Debug|x64
+		{F31912A2-6437-4B32-BC22-982DA535E84A}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{F31912A2-6437-4B32-BC22-982DA535E84A}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{C4AA64AD-1E96-44DB-A6F1-C753FB02B301}.Debug|x64.ActiveCfg = Debug|x64
+		{C4AA64AD-1E96-44DB-A6F1-C753FB02B301}.Debug|x64.Build.0 = Debug|x64
+		{C4AA64AD-1E96-44DB-A6F1-C753FB02B301}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{C4AA64AD-1E96-44DB-A6F1-C753FB02B301}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{AAE3A34F-6C0E-4A14-B5C7-1890BC772EB8}.Debug|x64.ActiveCfg = Debug|x64
+		{AAE3A34F-6C0E-4A14-B5C7-1890BC772EB8}.Debug|x64.Build.0 = Debug|x64
+		{AAE3A34F-6C0E-4A14-B5C7-1890BC772EB8}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{AAE3A34F-6C0E-4A14-B5C7-1890BC772EB8}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{F7A3D7B9-2071-4EDF-9B0B-D5477DA3E977}.Debug|x64.ActiveCfg = Debug|x64
+		{F7A3D7B9-2071-4EDF-9B0B-D5477DA3E977}.Debug|x64.Build.0 = Debug|x64
+		{F7A3D7B9-2071-4EDF-9B0B-D5477DA3E977}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{F7A3D7B9-2071-4EDF-9B0B-D5477DA3E977}.Release_libegel|x64.Build.0 = Release_libegel|x64
+		{EABF1835-9523-4F51-A742-DA1FBC7AD5F0}.Debug|x64.ActiveCfg = Debug|x64
+		{EABF1835-9523-4F51-A742-DA1FBC7AD5F0}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{BF108125-2F00-4747-B10D-59B676A26370}.Debug|x64.ActiveCfg = Debug|x64
+		{BF108125-2F00-4747-B10D-59B676A26370}.Release_libegel|x64.ActiveCfg = Release_libegel|x64
+		{BF108125-2F00-4747-B10D-59B676A26370}.Release_libegel|x64.Build.0 = Release_libegel|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B0157901-C5BD-49ED-A66C-DACE95AD2BD8}
+	EndGlobalSection
+EndGlobal

@@ -16,9 +16,6 @@
 #include "configurable.h"
 using namespace std;
 
-#define PCAP_FILE_HEADER_SIZE       24
-#define PCAP_PACKET_OFFSET          58
-
 CDMUXDataSource::CDMUXDataSource() : _pConfig(nullptr), _type(DataSourceType::TYPE_SOCKET){
 }
 
@@ -31,6 +28,7 @@ CDMUXDataSource* CDMUXDataSource::create(PinConfiguration *pconfig)
         int _port2;
         int _cached;
         int _rio;
+        int _dpdk;
         PinConfiguration *_pConfig;
         PinConfiguration * getConfiguration() {
             return _pConfig;
@@ -41,11 +39,16 @@ CDMUXDataSource* CDMUXDataSource::create(PinConfiguration *pconfig)
             PROPERTY_REGISTER_OPTIONAL("port2", _port2, -1);
             PROPERTY_REGISTER_OPTIONAL("cached", _cached, -1);
             PROPERTY_REGISTER_OPTIONAL("rio", _rio, -1);
+            PROPERTY_REGISTER_OPTIONAL("dpdk", _dpdk, -1);
         }
     } dsPin(pconfig);
 
     if (dsPin._filename != NULL && strlen(dsPin._filename) > 0 && dsPin._cached == 1)
         source = new CCachedFileDataSource();
+#ifdef _USE_LIBEGEL
+    else if (dsPin._port > -1 && dsPin._dpdk > -1)
+        source = new CDPDKDataSource();
+#endif // _USE_LIBEGEL
     else if (dsPin._filename != NULL && strlen(dsPin._filename) > 0)
         source = new CFileDataSource();
     else if (dsPin._port > -1 && dsPin._port2 > -1)

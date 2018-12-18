@@ -17,9 +17,6 @@
 #include "rtpframe.h"
 using namespace std;
 
-#define PCAP_FILE_HEADER_SIZE       24
-#define PCAP_PACKET_OFFSET          58
-
 CCachedFileDataSource::CCachedFileDataSource()
     : CDMUXDataSource() {
 

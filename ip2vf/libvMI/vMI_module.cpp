@@ -19,7 +19,7 @@ std::mutex CvMIModuleController::m_lock;
 /**
 * @param moduleCallback a callback that handles events regarding entire module
 */
-CvMIModuleController::CvMIModuleController(const unsigned int &zmq_listen_port, const libvMI_input_callback &moduleCallback, const void* user_data) :
+CvMIModuleController::CvMIModuleController(const libvMI_input_callback &moduleCallback, const void* user_data) :
     m_Callback(moduleCallback),
     m_zmqlogger(NULL),
     m_userData(user_data)
@@ -61,8 +61,11 @@ int CvMIModuleController::stop() {
 
     if (m_state == STATE_STARTED) {
         //stop all of the input streams:
-        for (auto inputStream : m_InputStreams)
-            inputStream->stop();
+		LOG_INFO("%d input(s) to stop", m_InputStreams.size());
+		for (auto inputStream : m_InputStreams) {
+			LOG_INFO("... stop input %d", inputStream->getHandle());
+			inputStream->stop();
+		}
 
         for (auto outputStream : m_OutputStreams)
             outputStream->stop();
@@ -88,8 +91,8 @@ int CvMIModuleController::close() {
         stop();
 
     LOG_INFO("delete all input pins...");
-    for (auto inputStream : m_InputStreams)
-        delete inputStream;
+	for (auto inputStream : m_InputStreams) 
+		delete inputStream;
     m_InputStreams.erase(m_InputStreams.begin(), m_InputStreams.end());
 
     LOG_INFO("delete all output pins...");

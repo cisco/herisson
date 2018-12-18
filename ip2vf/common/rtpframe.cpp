@@ -25,6 +25,7 @@
 double CRTPFrame::_timestampbase = 0.0f;
 
 CRTPFrame::CRTPFrame() {
+
     _frame = NULL;
     _v = 0;
     _p = 0;
@@ -68,46 +69,69 @@ void CRTPFrame::dumpHeader()
 }
 
 void CRTPFrame::extractData() {
+
     if (_frame == NULL)
         return;
-    //LOG_DUMP(_frame, RTP_HEADERS_LENGTH);
-    _v  = (_frame[0] & 0b11000000) >> 6;
-    _p  = (_frame[0] & 0b00100000) >> 5;
-    _x  = (_frame[0] & 0b00010000) >> 4;
-    _cc = (_frame[0] & 0b00001111);
-    _m  = (_frame[1] & 0b10000000) >> 7;
-    _pt = (_frame[1] & 0b01111111);
-    _seq= (_frame[2] << 8) + _frame[3];
-    _timestamp = (_frame[4] << 24) + (_frame[5] << 16) + (_frame[6] << 8)  + _frame[7];
-    _ssrc      = (_frame[8] << 24) + (_frame[9] << 16) + (_frame[10] << 8) + _frame[11];
+    try {
+        //LOG_DUMP(_frame, RTP_HEADERS_LENGTH);
+        _v  = (_frame[0] & 0b11000000) >> 6;
+        _p  = (_frame[0] & 0b00100000) >> 5;
+        _x  = (_frame[0] & 0b00010000) >> 4;
+        _cc = (_frame[0] & 0b00001111);
+        _m  = (_frame[1] & 0b10000000) >> 7;
+        _pt = (_frame[1] & 0b01111111);
+        _seq= (_frame[2] << 8) + _frame[3];
+        _timestamp = (_frame[4] << 24) + (_frame[5] << 16) + (_frame[6] << 8)  + _frame[7];
+        _ssrc      = (_frame[8] << 24) + (_frame[9] << 16) + (_frame[10] << 8) + _frame[11];
+    }
+    catch (...) {
+        LOG_ERROR("Major error when reading RTP headers... seems data is corrupted. skip this frame!");
+        return;
+    }
 }
 
 void CRTPFrame::writeHeader(int seq, int marker, int pt) {
+
     // according to the rfc 3550, _timestamp is 27mHz clock
-    //_timestamp = getTimestamp();
-    _timestamp = 0;
-    _seq = seq;
-    _m = marker;
-    memset(_frame, 0, RTP_HEADERS_LENGTH);
-    _frame[0]  = (2 << 6);
-    _frame[1]  = (_m << 7);
-    _frame[1] |= (pt & 0b01111111);
-    _frame[2]  = _seq >> 8;
-    _frame[3]  = _seq & 0b11111111;
-    _frame[4]  = (_timestamp >> 24) & 0b11111111;
-    _frame[5]  = (_timestamp >> 16) & 0b11111111;
-    _frame[6]  = (_timestamp >> 8) & 0b11111111;
-    _frame[7]  = _timestamp & 0b11111111;
-    _frame[8]  = (_ssrc >> 24) & 0b11111111;
-    _frame[9]  = (_ssrc >> 16) & 0b11111111;
-    _frame[10] = (_ssrc >> 8) & 0b11111111;
-    _frame[11] = _ssrc & 0b11111111;
+    if (_frame == NULL)
+        return;
+    try {
+        _timestamp = 0;
+        _seq = seq;
+        _m = marker;
+        memset(_frame, 0, RTP_HEADERS_LENGTH);
+        _frame[0]  = (2 << 6);
+        _frame[1]  = (_m << 7);
+        _frame[1] |= (pt & 0b01111111);
+        _frame[2]  = _seq >> 8;
+        _frame[3]  = _seq & 0b11111111;
+        _frame[4]  = (_timestamp >> 24) & 0b11111111;
+        _frame[5]  = (_timestamp >> 16) & 0b11111111;
+        _frame[6]  = (_timestamp >> 8) & 0b11111111;
+        _frame[7]  = _timestamp & 0b11111111;
+        _frame[8]  = (_ssrc >> 24) & 0b11111111;
+        _frame[9]  = (_ssrc >> 16) & 0b11111111;
+        _frame[10] = (_ssrc >> 8) & 0b11111111;
+        _frame[11] = _ssrc & 0b11111111;
+    }
+    catch (...) {
+        LOG_ERROR("Major error when writing RTP headers... seems data is corrupted. skip this frame!");
+        return;
+    }
 }
+
 void CRTPFrame::overrideSeqNumber(int seq) {
+
     _seq = seq;
-    _frame[2] = _seq >> 8;
-    _frame[3] = _seq & 0b11111111;
+    if (_frame == NULL)
+        return;
+    try {
+        _frame[2] = _seq >> 8;
+        _frame[3] = _seq & 0b11111111;
+    }
+    catch (...) {
+        LOG_ERROR("Major error when overriding seq number... seems data is corrupted. skip this frame!");
+        return;
+    }
 }
-
-
 

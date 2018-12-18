@@ -79,7 +79,20 @@ void CModuleConfiguration::initFromConfig(const char* msg)
         //LOG("token[%d]='%s'\n", i, tokens[i].c_str() );
         std::vector<std::string> params = tools::split(tokens[i], '=');
 
-        if (params.size() != 2) {
+		if (params.size() > 2) {
+			LOG_ERROR("Invalid parameter format: '%s' is not in format '<param>=<value>'", tokens[i].c_str());
+			for (int j = 0; j < (int)params.size(); j++)
+				LOG_ERROR("params[%d]='%s'", j, params[j]);
+			for (int j = 2; j < (int)params.size(); j++)
+			{
+				params[1] += "=";
+				params[1] += params[j];
+			}
+			for (int j = 2; j < (int)params.size(); j++)
+				params.pop_back();
+			LOG_ERROR("params[1]='%s'", params[1].c_str());
+		}
+		else if (params.size() != 2) {
             LOG_ERROR("Invalid parameter format: '%s' is not in format '<param>=<value>'", tokens[i].c_str());
             continue;
         }

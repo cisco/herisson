@@ -59,6 +59,7 @@ inline std::string methodName(const std::string& prettyFunction)
 LogLevel getLogLevel();
 
 void setLogLevel(LogLevel level);
+void closeLog();
 
 VMILIBRARY_API_LOG void internal_LOG(std::string method, const char* message, ...);
 VMILIBRARY_API_LOG void internal_LOG_INFO(std::string method, const char* message, ...);

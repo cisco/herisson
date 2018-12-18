@@ -105,6 +105,7 @@ vMI_converter
 
 /ip2vf/WinSdkSample/libip2vf/libIp2vfd.dll
 /ip2vf/WinSdkSample/libip2vf/libIp2vfd.lib
+/ip2vf/libvMI/sample/libvMI.so
 /ip2vf/libvMI/sample/libvMI.h
 /ip2vf/libvMI/sample/sample
 /ip2vf/Documentation/examples/
@@ -139,3 +140,9 @@ ip2vf/Documentation/libvmi/.DS_Store
 /ip2vf/TestHarness/nbactions.xml
 /TestHarness/target/
 /TestHarness/target/
+
+/external/libegel/lib/
+/external/libegel/lib/libegel.so
+/external/libegel/src/libegel.so
+/external/libegel/src/stub
+/external/pthreads-w32-2-9-1-release

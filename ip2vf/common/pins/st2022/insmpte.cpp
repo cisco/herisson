@@ -77,7 +77,7 @@ CInSMPTE::~CInSMPTE()
 int CInSMPTE::_rcv_process() {
 
     unsigned char   rtp_packet[RTP_PACKET_SIZE];
-    int             lastSeq = -1, result;
+    int             lastSeq = -1, result = 0;
     int             frameCounter = 0;
     int             sampleSize = RTP_PACKET_SIZE;
 
@@ -98,27 +98,36 @@ int CInSMPTE::_rcv_process() {
 
     // Get First packet to identify kind of stream
     sampleSize = _source->getSampleSize();
-    result = _source->read((char*)rtp_packet, sampleSize);
-    if (result <= 0) {
-        LOG_ERROR("%s: Can't read from source, result=%d", _name.c_str(), result);
-        return 0;
-    }
-    CRTPFrame rtp(rtp_packet, result);
-    if (rtp._pt == 98) {
-        _streamType = SMPTE_2022_6;
-        LOG_INFO("%s: RECEIVE SMPTE_2022_6 standard suite", _name.c_str());
-    }
-    else if (rtp._pt == 96) {
-        _streamType = SMPTE_2110_20;
-        LOG_INFO("%s: RECEIVE SMPTE_2110_20 standard suite", _name.c_str());
-    }
-    else {
+	LOG_INFO("%s: wait to receive first packet in order to detect kind of stream...", _name.c_str());
+	while (_bStarted && result <= 0) {
+		result = _source->read((char*)rtp_packet, sampleSize);
+		if (result == VMI_E_PACKET_LOST) {
+			// not an error
+			continue;
+		} 
+		else if (result <= 0) {
+			LOG_ERROR("%s: Can't read from source, result=%d", _name.c_str(), result);
+			return 0;
+		} 
+		else {
+			LOG_INFO("%s: RECEIVE first packet", _name.c_str());
+			CRTPFrame rtp(rtp_packet, result);
+			if (rtp._pt == 98) {
+				_streamType = SMPTE_2022_6;
+				LOG_INFO("%s: detect SMPTE_2022_6 standard suite", _name.c_str());
+			}
+			else if (rtp._pt == 96) {
+				_streamType = SMPTE_2110_20;
+				LOG_INFO("%s: detect SMPTE_2110_20 standard suite", _name.c_str());
+			}
+			else {
 
-    }
-
-    // The samplesize can be updated by the source following the receive of the first packet...
-    sampleSize = _source->getSampleSize();
-    LOG_INFO("%s: Detect samplesize=%d", _name.c_str(), sampleSize);
+			}
+			// The samplesize can be updated by the source following the receive of the first packet...
+			sampleSize = _source->getSampleSize();
+			LOG_INFO("%s: Detect samplesize=%d", _name.c_str(), sampleSize);
+		}
+	}
 
     unsigned int mediatimestamp;
 #ifdef HAVE_PROBE
@@ -301,13 +310,14 @@ void CInSMPTE::stop()
 {
     LOG("%s: -->", _name.c_str());
 
-    LOG_INFO("%s: stop thread -->", _name.c_str());
+    LOG("%s: stop thread -->", _name.c_str());
     _bStarted = false;
     if (_source)
         _source->close();
     _q.push(-1);    // In case of, to unblock blocking pop
-    _t.join();
-    LOG_INFO("%s: stop thread <-- ", _name.c_str());
+	if(_t.joinable())
+		_t.join();
+    LOG("%s: stop thread <-- ", _name.c_str());
 
     if (_source)
         _source->close();

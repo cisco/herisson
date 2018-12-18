@@ -45,7 +45,7 @@ public:
     /**
     * @param moduleCallback a callback that handles events regarding entire module
     */
-    CvMIModuleController(const unsigned int &zmq_listen_port, const libvMI_input_callback &moduleCallback, const void* user_data);
+    CvMIModuleController(const libvMI_input_callback &moduleCallback, const void* user_data);
     virtual ~CvMIModuleController();
 
 

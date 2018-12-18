@@ -24,18 +24,20 @@ CvMIInput::CvMIInput(std::string &configuration, libvMI_input_callback callback,
 }
 
 CvMIInput::~CvMIInput() {
+
     LOG("[%d] -->", m_handle);
     if (m_config != NULL) {
         delete m_config;
+		m_config = NULL;
     }
     if (m_input != NULL) {
         delete m_input;
+		m_input = NULL;
     }
-    LOG("[%d] <--", m_handle);
+	LOG("[%d] <--", m_handle);
 }
 
-void CvMIInput::_init(const std::string &name, int id)
-{
+void CvMIInput::_init(const std::string &name, int id) {
 
     m_id = id;
 
@@ -88,6 +90,7 @@ void CvMIInput::signalQuit() {
 * TODO: refactor this old code
 */
 void CvMIInput::start() {
+
     LOG_INFO("[%d] -->", m_handle);
     if (m_state != STATE_STOPPED)
     {
@@ -107,6 +110,7 @@ void CvMIInput::start() {
 * TODO: refactor this old code
 */
 void CvMIInput::stop() {
+
     LOG_INFO("[%d] -->", m_handle);
     if (m_state != STATE_STARTED)
     {
@@ -116,13 +120,14 @@ void CvMIInput::stop() {
     m_state = STATE_STOPPED;
     m_quit_process = true;
     m_input->stop();
+	LOG_INFO("[%d] input stoped...", m_handle);
     //usleep(10000);
 
-    m_ProcLock.lock();
+	m_ProcLock.lock();
     if (m_th_process.joinable()) {
         m_th_process.join();
     }
-
+	LOG_INFO("[%d] joined", m_handle);
     m_ProcLock.unlock();
 
     LOG_INFO("[%d] <--", m_handle);
@@ -132,8 +137,8 @@ void CvMIInput::stop() {
 * TODO: write description for internal function carried over from old interface
 * TODO: refactor this old code
 */
-void *CvMIInput::_process(void *context)
-{
+void *CvMIInput::_process(void *context) {
+
     int count = 0, result;
     LOG_INFO("[%d] -->", m_handle);
 
@@ -151,42 +156,48 @@ void *CvMIInput::_process(void *context)
     m_input->reset();
 
     while (m_quit_process == false) {
+
         LOG("[%d] iterate, c=%d", m_handle, count);
 
-        // the read is blocking -- won't end when trying to quit ----
-        libvMI_frame_handle hFrame = libvmi_frame_create();
-        if (hFrame == LIBVMI_INVALID_HANDLE) {
-            LOG_ERROR("Unable to get/create new vMIframe on the queue to transport this one... drop it");
-            if (m_quit_process)
+        try {
+            // the read is blocking -- won't end when trying to quit ----
+            libvMI_frame_handle hFrame = libvmi_frame_create();
+            if (hFrame == LIBVMI_INVALID_HANDLE) {
+                LOG_ERROR("Unable to get/create new vMIframe on the queue to transport this one... drop it");
+                if (m_quit_process)
+                    break;
+                //We create a frame not part of the pool and we drop it afterwards
+                CvMIFrame *tmpFrame = new CvMIFrame();
+                m_input->read(tmpFrame);
+                delete tmpFrame;
+                continue;
+            }
+            CvMIFrame* frame = libvMI_frame_get(hFrame);
+            result = m_input->read(frame);
+
+            if (m_quit_process) {
+                LOG_INFO("[%d] Exit", m_handle);
+                libvmi_frame_release(hFrame);
                 break;
-            //We create a frame not part of the pool and we drop it afterwards
-            CvMIFrame *tmpFrame = new CvMIFrame();
-            m_input->read(tmpFrame);
-            delete tmpFrame;
-            continue;
-        }
-        CvMIFrame* frame = libvMI_frame_get(hFrame);
-        result = m_input->read(frame);
+            }
+            else if (result != VMI_E_OK) {
+                LOG("[%d] Error reading frame", m_handle);
+                // Don't forget to release the frame as nothing else will be consume it...
+                libvmi_frame_release(hFrame);
+                continue;
+            }
 
-        if (m_quit_process) {
-            LOG_INFO("[%d] Exit", m_handle);
-            libvmi_frame_release(hFrame);
-            break;
-        }
-        else if (result != VMI_E_OK) {
-            LOG("[%d] Error reading frame", m_handle);
-            // Don't forget to release the frame as nothing else will be consume it...
-            libvmi_frame_release(hFrame);
-            continue;
-        }
+            // Refresh in and out headers structure. Note that output header will be writed only just before the send
+            //m_inframefactory.ReadHeaders((unsigned char*)m_input->getCurrentBuffer());
 
-        // Refresh in and out headers structure. Note that output header will be writed only just before the send
-        //m_inframefactory.ReadHeaders((unsigned char*)m_input->getCurrentBuffer());
-
-        LOG_WARNING("[%d] need to reenable: m_counter.tick(m_config._name)", m_handle);
-        // notify the processing node
-        m_counter.tick("");
-        callbackFunction(CMD_TICK, m_moduleHandle, hFrame);
+            LOG_WARNING("[%d] need to reenable: m_counter.tick(m_config._name)", m_handle);
+            // notify the processing node
+            m_counter.tick("");
+            callbackFunction(CMD_TICK, m_moduleHandle, hFrame);
+        }
+        catch (...) {
+            LOG_ERROR("Catch exception on process() loop...");
+        }
     }
     m_state = STATE_STOPPED;
 

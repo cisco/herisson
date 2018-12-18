@@ -26,6 +26,7 @@ cd linux
 
 export CC=gcc-5
 export CXX=g++-5
+#cmake -DCMAKE_BUILD_TYPE=Debug ../../ip2vf 
 cmake -DCMAKE_BUILD_TYPE=Release ../../ip2vf 
 make -j $jobs
 

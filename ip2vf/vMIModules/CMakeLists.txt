@@ -4,6 +4,7 @@ if (IS_GIT_REPO)
 
    string(REGEX REPLACE "\n" " " GIT_LAST_10_COMMITS "${GIT_LAST_10_COMMITS}")
    string(REGEX REPLACE "\n" " " GIT_CURRENTBRANCH "${GIT_CURRENTBRANCH}")
+   string(REGEX REPLACE "\"" "\\\\\"" GIT_LAST_10_COMMITS "${GIT_LAST_10_COMMITS}")
 
    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/gitversion.cpp" "const char *gitlast10commits = \"${GIT_LAST_10_COMMITS}\";\n")
    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/gitversion.cpp" "const char *gitcurrentbranch = \"${GIT_CURRENTBRANCH}\";\n")
@@ -17,8 +18,13 @@ add_executable(vMI_adapter vMI_adapter.cpp ${GIT_VERSION_FILE})
 target_link_libraries(vMI_adapter PRIVATE vMI)
 target_include_directories(vMI_adapter PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
 
+add_executable(vMI_multinstances vMI_multinstances.cpp ${GIT_VERSION_FILE})
+target_link_libraries(vMI_multinstances PRIVATE vMI)
+target_include_directories(vMI_multinstances PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
+
 add_executable(vMI_demuxer vMI_demuxer.cpp ${GIT_VERSION_FILE})
 target_link_libraries(vMI_demuxer PRIVATE vMI)
+target_link_libraries(vMI_demuxer PRIVATE ${LIBEGEL_LIBRARIES})
 target_include_directories(vMI_demuxer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../common/")
 
 add_executable(vMI_converter vMI_converter.cpp ${GIT_VERSION_FILE})

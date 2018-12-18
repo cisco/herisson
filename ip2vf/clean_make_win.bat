@@ -1,21 +1,32 @@
+@echo ****************************
+@echo *Building IP2VF for windows*
+@echo ****************************
+
+setlocal
+set "source_directory=%cd%"
+@echo current directory is: %source_directory%
+
 echo configuring visual studio build environemnt
-PATH="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC";%PATH%
-call vcvarsall.bat || exit /b 666
-
-echo cleaning and building windows version of project
-cd IP2VideoFrame
-echo removing old files, this is better than clean
-rmdir /s /q Debug
-rmdir /s /q Release
-rmdir /s /q x64
-
-echo building release version
-MSBuild IP2VideoFrame.sln /m:4 /t:Clean /property:Configuration=Release /property:Platform=x64 || exit /b 666
-MSBuild IP2VideoFrame.sln /m:4 /property:Configuration=Release /property:Platform=x64 || exit /b 666
-
-echo building debug version
-MSBuild IP2VideoFrame.sln /m:4 /t:Clean /property:Configuration=Debug /property:Platform=x64 || exit /b 666
-MSBuild IP2VideoFrame.sln /m:4 /property:Configuration=Debug /property:Platform=x64 || exit /b 666
-
+:return back to build directory
+cd %source_directory%
 cd ..
-Echo success!
+md build
+cd build
+md windows
+cd windows
+
+:For some strange reason this is required when running from cygwin on the build server
+: the %_% variable is used to detect if running inside a cygwin ssh process
+IF DEFINED _ ECHO fixing cmake and cygwin conflicts
+IF DEFINED _ call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall" amd64
+echo on
+
+@echo printing all environment variables:
+set
+@echo ----------------------------------------------------
+
+cmake -G "Visual Studio 15 2017 Win64" ..\..\ip2vf\ || exit /b 666
+cmake --build . -- /maxcpucount:8 /p:Configuration=Release || exit /b 666
+:return to original directory where the build was run
+cd %source_directory%
+endlocal 

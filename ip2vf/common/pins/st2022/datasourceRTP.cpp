@@ -20,6 +20,7 @@ CRTPDataSource::CRTPDataSource()
 {
     _udpSock    = NULL;
     _samplesize = RTP_PACKET_SIZE;  // by default, will be refresh 
+    _type = DataSourceType::TYPE_SOCKET;
 }
 
 CRTPDataSource::~CRTPDataSource() {
@@ -63,7 +64,7 @@ void CRTPDataSource::waitForNextFrame()
 #ifdef HAVE_PROBE
 void CRTPDataSource::pktTSctl(int ctl, unsigned int identifier) /* PktTS hook */
 {
-	_udpSock->pktTSctl(ctl, identifier);
+    _udpSock->pktTSctl(ctl, identifier);
 }
 #endif
 

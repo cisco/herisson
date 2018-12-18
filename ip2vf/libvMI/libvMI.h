@@ -141,7 +141,7 @@ enum SAMPLINGFMT {
 };
 
 /**
- * \enum _AUDIOFMT
+ * \enum AUDIOFMT
  * \brief audio format to be used for MediaHeader::AUDIO_FORMAT
  */
 enum AUDIOFMT {
@@ -170,13 +170,16 @@ enum MEDIAFORMAT {
     ANC = 3,                /*!< Ancillary data  */
 };
 
+/**
+* \brief Structure used with libvmi_frame_create_ext() to request an empty vMI frame
+*/
 struct vMIFrameInitStruct {
-    MEDIAFORMAT     _media_format;
-    int             _media_size;
-    int             _video_width;   // Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video width in pixels.
-    int             _video_height;  // Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video height in pixels.
-    int             _video_depth;   // Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video sample size in bits. Typically 8 or 10.
-    SAMPLINGFMT     _video_smpfmt;  // Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video sampling format. Supported is _RGB, _RGBA, _BGR, _BGRA, _YCbCr_4_2_2
+    MEDIAFORMAT     _media_format;  /*!< Kind of media */
+    int             _media_size;    /*!< size of media buffer in bytes */
+    int             _video_width;   /*!< (Optional) Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video width in pixels. */
+    int             _video_height;  /*!< (Optional) Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video height in pixels. */
+    int             _video_depth;   /*!< (Optional) Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video sample size in bits. Typically 8 or 10. */
+    SAMPLINGFMT     _video_smpfmt;  /*!< (Optional) Video only, i.e: _media_format==MEDIAFORMAT::VIDEO. Video sampling format. Supported is _RGB, _RGBA, _BGR, _BGRA, _YCbCr_4_2_2 */
 };
 
 #ifdef _WIN32
@@ -271,7 +274,7 @@ VMILIBRARY_API int libvmi_frame_release(const libvMI_frame_handle hFrame);
 *
 * Increase the ref counter for the vMIFrame. 
 *
-* \param libvMI_frame_handle hFrame handle of the frame
+* \param hFrame handle of the frame
 * \return int the ref counter value updated, -1 if not found
 */
 VMILIBRARY_API int libvmi_frame_addref(const libvMI_frame_handle hFrame);
@@ -284,7 +287,7 @@ VMILIBRARY_API int libvmi_frame_addref(const libvMI_frame_handle hFrame);
 * a frame provided by vMI across the callback correspond to the size of content received on the corresponding input.
 * The size of a user created frame correspond to the size define by the user along the creation process.
 *
-* \param libvMI_frame_handle hFrame handle of the frame
+* \param hFrame handle of the frame
 * \return int the media size in byte, -1 if not found
 */
 VMILIBRARY_API int libvMI_frame_getsize(const libvMI_frame_handle hFrame);
@@ -294,71 +297,79 @@ VMILIBRARY_API int libvMI_frame_getsize(const libvMI_frame_handle hFrame);
 *
 * Corresponding frame size is provided from libvMI_frame_getsize()
 *
-* \param libvMI_frame_handle hFrame handle of the frame
+* \param hFrame handle of the frame
 * \return A pointer to the frame's data. NULL if not found.
 */
-VMILIBRARY_API char*  libvMI_get_frame_buffer(const libvMI_frame_handle frame);
+VMILIBRARY_API char*  libvMI_get_frame_buffer(const libvMI_frame_handle hFrame);
 
 /**
-* \brief Gets header values of a vMI frame
-* value format from MediaHeader:
-* MODULE_ID            int
-* MEDIA_FRAME_NB       int
-* MEDIA_FORMAT         MEDIAFORMAT
-* MEDIA_TIMESTAMP      unsigned int                  // it's the media timestamp in RTP format 
-* VIDEO_WIDTH          int
-* VIDEO_HEIGHT         int
-* VIDEO_COLORIMETRY    COLORIMETRY
-* VIDEO_FORMAT         SAMPLINGFMT
-* VIDEO_DEPTH          int
-* AUDIO_NB_CHANNEL     int
-* AUDIO_FORMAT         AUDIOFMT
-* AUDIO_SAMPLE_RATE    SAMPLERATE
-* AUDIO_PACKET_TIM     int
-* MEDIA_PAYLOAD_SIZE   int
-* VIDEO_FRAMERATE_CODE int
-* MEDIA_SRC_TIMESTAMP  unsigned long long
-* MEDIA_IN_TIMESTAMP   unsigned long long
-* MEDIA_OUT_TIMESTAMP  unsigned long long
-* VIDEO_SMPTEFRMCODE   int
+* \brief Gets header values of a vMI frame.
 *
-* \param libvMI_frame_handle hFrame handle of the frame
+* Value format from ::MediaHeader:
+* <table><tr><th>MediaHeader</th><th>Kind of value</th></tr>
+* <tr><td>MODULE_ID            </td><td>int                     </td></tr>
+* <tr><td>MEDIA_FRAME_NB       </td><td>int                     </td></tr>
+* <tr><td>MEDIA_FORMAT         </td><td>MEDIAFORMAT             </td></tr>
+* <tr><td>MEDIA_TIMESTAMP      </td><td>unsigned int            </td></tr>
+* <tr><td>VIDEO_WIDTH          </td><td>int                     </td></tr>
+* <tr><td>VIDEO_HEIGHT         </td><td>int                     </td></tr>
+* <tr><td>VIDEO_COLORIMETRY    </td><td>COLORIMETRY             </td></tr>
+* <tr><td>VIDEO_FORMAT         </td><td>SAMPLINGFMT             </td></tr>
+* <tr><td>VIDEO_DEPTH          </td><td>int                     </td></tr>
+* <tr><td>AUDIO_NB_CHANNEL     </td><td>int                     </td></tr>
+* <tr><td>AUDIO_FORMAT         </td><td>AUDIOFMT                </td></tr>
+* <tr><td>AUDIO_SAMPLE_RATE    </td><td>SAMPLERATE              </td></tr>
+* <tr><td>AUDIO_PACKET_TIM     </td><td>int                     </td></tr>
+* <tr><td>MEDIA_PAYLOAD_SIZE   </td><td>int                     </td></tr>
+* <tr><td>VIDEO_FRAMERATE_CODE </td><td>int                     </td></tr>
+* <tr><td>MEDIA_SRC_TIMESTAMP  </td><td>unsigned long long      </td></tr>
+* <tr><td>MEDIA_IN_TIMESTAMP   </td><td>unsigned long long      </td></tr>
+* <tr><td>MEDIA_OUT_TIMESTAMP  </td><td>unsigned long long      </td></tr>
+* <tr><td>VIDEO_SMPTEFRMCODE   </td><td>int                     </td></tr>
+* <tr><td>NAME_INFORMATION     </td><td>char*                   </td></tr>
+* </table>
+*
+* \param hFrame handle of the frame
 * \param header kind of header to get value. Must be one of MediaHeader enum value
 * \param value pointer to an int, used by libvMI to store the value.
 */
-VMILIBRARY_API void libvMI_get_frame_headers(const libvMI_frame_handle frame, MediaHeader header, void* value);
+VMILIBRARY_API void libvMI_get_frame_headers(const libvMI_frame_handle hFrame, MediaHeader header, void* value);
 
 /**
 * \brief Sets values for a vMI frame headers
-* value format from MediaHeader:
-* MODULE_ID            int
-* MEDIA_FRAME_NB       int
-* MEDIA_FORMAT         MEDIAFORMAT
-* MEDIA_TIMESTAMP      unsigned int                  // it's the media timestamp in RTP format 
-* VIDEO_WIDTH          int
-* VIDEO_HEIGHT         int
-* VIDEO_COLORIMETRY    COLORIMETRY
-* VIDEO_FORMAT         SAMPLINGFMT
-* VIDEO_DEPTH          int
-* AUDIO_NB_CHANNEL     int
-* AUDIO_FORMAT         AUDIOFMT
-* AUDIO_SAMPLE_RATE    SAMPLERATE
-* AUDIO_PACKET_TIM     int
-* MEDIA_PAYLOAD_SIZE   int
-* VIDEO_FRAMERATE_CODE int
-* MEDIA_SRC_TIMESTAMP  unsigned long long
-* MEDIA_IN_TIMESTAMP   unsigned long long
-* MEDIA_OUT_TIMESTAMP  unsigned long long
-* VIDEO_SMPTEFRMCODE   int
+*
+* Value format from MediaHeader:
+* <table><tr><th>MediaHeader</th><th>Kind of value</th></tr>
+* <tr><td>MODULE_ID            </td><td>int                     </td></tr>
+* <tr><td>MEDIA_FRAME_NB       </td><td>int                     </td></tr>
+* <tr><td>MEDIA_FORMAT         </td><td>MEDIAFORMAT             </td></tr>
+* <tr><td>MEDIA_TIMESTAMP      </td><td>unsigned int            </td></tr>
+* <tr><td>VIDEO_WIDTH          </td><td>int                     </td></tr>
+* <tr><td>VIDEO_HEIGHT         </td><td>int                     </td></tr>
+* <tr><td>VIDEO_COLORIMETRY    </td><td>COLORIMETRY             </td></tr>
+* <tr><td>VIDEO_FORMAT         </td><td>SAMPLINGFMT             </td></tr>
+* <tr><td>VIDEO_DEPTH          </td><td>int                     </td></tr>
+* <tr><td>AUDIO_NB_CHANNEL     </td><td>int                     </td></tr>
+* <tr><td>AUDIO_FORMAT         </td><td>AUDIOFMT                </td></tr>
+* <tr><td>AUDIO_SAMPLE_RATE    </td><td>SAMPLERATE              </td></tr>
+* <tr><td>AUDIO_PACKET_TIM     </td><td>int                     </td></tr>
+* <tr><td>MEDIA_PAYLOAD_SIZE   </td><td>int                     </td></tr>
+* <tr><td>VIDEO_FRAMERATE_CODE </td><td>int                     </td></tr>
+* <tr><td>MEDIA_SRC_TIMESTAMP  </td><td>unsigned long long      </td></tr>
+* <tr><td>MEDIA_IN_TIMESTAMP   </td><td>unsigned long long      </td></tr>
+* <tr><td>MEDIA_OUT_TIMESTAMP  </td><td>unsigned long long      </td></tr>
+* <tr><td>VIDEO_SMPTEFRMCODE   </td><td>int                     </td></tr>
+* <tr><td>NAME_INFORMATION     </td><td>char*                   </td></tr>
+* </table>
 *
 * Note that setting some headers content as VIDEO_DEPTH, MEDIA_PAYLOAD_SIZE, VIDEO_WIDTH and VIDEO_HEIGHT effectively change
 * the size of the media buffer.
 *
-* \param libvMI_frame_handle hFrame handle of the frame
+* \param hFrame handle of the frame
 * \param header kind of header to get value. Must be one of MediaHeader enum value
 * \param value pointer to a void which contains the value to set for the header
 */
-VMILIBRARY_API void   libvMI_set_frame_headers(const libvMI_frame_handle frame, MediaHeader header, void* value);
+VMILIBRARY_API void   libvMI_set_frame_headers(const libvMI_frame_handle hFrame, MediaHeader header, void* value);
 
 /**
 * \brief Return a parameter from current libvMI instance
@@ -395,12 +406,11 @@ VMILIBRARY_API void libvMI_set_output_parameter(const libvMI_module_handle hModu
  * Create and initialize a module with inputs and ouputs according to the configuration provided. Return the handle which allow
  * to use it afterwards. A module is responsible for ingesting data from the pipe, and propagating output.
  *
- * \param zmq_listen_port modules are controlled by ZeroMQ, each module needs a ZeroMQ port
  * \param func a callback function for module related events. (Input related events are reported elsewhere)
  * \param preconfig A configuration string which describe configuration for the module and all inputs and outputs included on the module .
  * \return a handle which can be used to reference the module later
  */
-VMILIBRARY_API libvMI_module_handle libvMI_create_module(int zmq_listen_port, libvMI_input_callback func, const char* preconfig);
+VMILIBRARY_API libvMI_module_handle libvMI_create_module(libvMI_input_callback func, const char* preconfig);
 
 /**
 * \brief Create and initialize a module
@@ -409,13 +419,12 @@ VMILIBRARY_API libvMI_module_handle libvMI_create_module(int zmq_listen_port, li
 * to use it afterwards. A module is responsible for ingesting data from the pipe, and propagating output. 
 * You can use "user_data" parameter to reference an opaque pointer that will be returned on all callback calls
 *
-* \param zmq_listen_port modules are controlled by ZeroMQ, each module needs a ZeroMQ port
 * \param func a callback function for module related events. (Input related events are reported elsewhere)
 * \param preconfig A configuration string which describe configuration for the module and all inputs and outputs included on the module .
 * \param user_data an opaque pointer (void*) that will be returned when callback will be called. It correspond to the first parameter (user_data) of the callback
 * \return a handle which can be used to reference the module later
 */
-VMILIBRARY_API libvMI_module_handle libvMI_create_module_ext(int zmq_listen_port, libvMI_input_callback func, const char* preconfig, const void* user_data);
+VMILIBRARY_API libvMI_module_handle libvMI_create_module_ext(libvMI_input_callback func, const char* preconfig, const void* user_data);
 
 /**
  *  \brief Return the count of inputs available on the module
@@ -453,11 +462,46 @@ VMILIBRARY_API libvMI_pin_handle libvMI_get_input_handle(const libvMI_module_han
 */
 VMILIBRARY_API libvMI_pin_handle libvMI_get_output_handle(const libvMI_module_handle module, int index);
 
-
+/**
+* \brief Return the name of the module as it is define on configuration.
+*
+* \param hModule the handle for the module which contains the output pin
+* \return the pointer on string where are stored the module name.
+*/
 VMILIBRARY_API const char* libvMI_get_module_name(const libvMI_module_handle hModule);
+
+/**
+* \brief Return the current configuration of the input pin identified by its handle
+*
+* \param hModule the handle for the module which contains the input pin
+* \param hInput handle of the input pin
+* \return pointer on the configuration string.
+*/
 VMILIBRARY_API const char* libvMI_get_input_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hInput);
+
+/**
+* \brief Return the current configuration of the output pin identified by its handle
+*
+* \param hModule the handle for the module which contains the output pin
+* \param hOutput handle of the output pin
+* \return pointer on the configuration string.
+*/
 VMILIBRARY_API const char* libvMI_get_output_config_stream(const libvMI_module_handle hModule, const libvMI_pin_handle hOutput);
+
+/**
+* \brief Return the number of modules managed by this library instance
+*
+* \return number of modules
+*/
 VMILIBRARY_API int libvMI_get_number_of_modules();
+
+/**
+* \brief Return the handle of a module identified by it's index. Use libvMI_get_number_of_modules to
+* retreive the total number of modules on this library instance
+*
+* \param index index of module on library instance module list
+* \return handle of found module.
+*/
 VMILIBRARY_API libvMI_module_handle libvMI_get_module_by_index(int index);
 
 /**

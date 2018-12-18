@@ -8,15 +8,15 @@ This repository contains the sources to build both the Herisson library and some
 
 
 ## Building
-You can build the project by running [clean_make.sh](clean_make.sh). This will generate a path called build in the root path of this repository. In the build path you will find  two important output paths:
-* build/vMIModules - Will contain some sample VMI modules which we will use in the next section.
+You can build the project by running [ip2vf/clean_make.sh](clean_make.sh). This will generate a path called build in the root path of this repository. In the build path you will find  two important output paths:
+* build/linux/vMIModules - Will contain some sample VMI modules which we will use in the next section.
 
-* build/libVMI - Will contain the VMI library which you can link to if you want to create a module
+* build/linux/libVMI - Will contain the VMI library which you can link to if you want to create a module
 
 ## Running a sample pipeline
 In this section we will be running a sample herisson pipeline which will generate and process a live video stream. *This tutorial uses a "PCAP" video file which is not included in this repository.*
 #### Open a terminal window:
-Go to the previously generated `build/vMIModules` path (or add it to your $PATH )
+Go to the previously generated `build/linux/vMIModules` path (or add it to your $PATH )
 #### Generate a "live" stream:
 In the terminal window run:
 
@@ -69,4 +69,5 @@ If everything went well, at this stage you should now be viewing video in the vi
 ### Next steps:
 * You can use the [automatic test harness](../TestHarness/README.md) to run further tests to test that your pipeline is functioning properly
 * Try to build your own Herisson module, and discover how easy it is to insert it into a pipeline.
-* [Probe your pipeline for metrics](ip2vf/vMIModules/vMI_probe.md)
+* [Probe your pipeline for metrics](vMIModules/vMI_probe.md)
+* [Herisson with DPDK support](IP2VideoFrame/DPDK.md)
