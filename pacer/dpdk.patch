@@ -1,0 +1,23 @@
+diff --git a/drivers/net/i40e/i40e_ethdev.c b/drivers/net/i40e/i40e_ethdev.c
+index 811cc9f..cd22355 100644
+--- a/drivers/net/i40e/i40e_ethdev.c
++++ b/drivers/net/i40e/i40e_ethdev.c
+@@ -728,8 +728,8 @@ static inline void i40e_GLQF_reg_init(struct i40e_hw *hw)
+  * from VSIs.
+ */
+ static void
+-i40e_add_tx_flow_control_drop_filter(struct i40e_pf *pf)
+-{
++i40e_add_tx_flow_control_drop_filter(__attribute__((unused)) struct i40e_pf *pf)
++{/*
+ 	struct i40e_hw *hw = I40E_PF_TO_HW(pf);
+ 	uint16_t flags = I40E_AQC_ADD_CONTROL_PACKET_FLAGS_IGNORE_MAC |
+ 			I40E_AQC_ADD_CONTROL_PACKET_FLAGS_DROP |
+@@ -743,6 +743,7 @@ i40e_add_tx_flow_control_drop_filter(struct i40e_pf *pf)
+ 	if (ret)
+ 		PMD_INIT_LOG(ERR,
+ 			"Failed to add filter to drop flow control frames from VSIs.");
++*/
+ }
+ 
+ static int

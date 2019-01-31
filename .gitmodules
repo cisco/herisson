@@ -1,0 +1,3 @@
+[submodule "pacer/dpdk"]
+	path = pacer/dpdk
+	url = git://dpdk.org/dpdk
